@@ -1,0 +1,330 @@
+---
+alwaysApply: true
+---
+
+
+# Tailwind CSS Responsive Design Rules
+
+## Core Principles
+
+- Always use Tailwind CSS utility classes for styling
+- Implement mobile-first responsive design approach
+- Use semantic class naming and consistent spacing
+- Follow Tailwind's responsive breakpoint system
+
+## Color Palette
+
+- **Primary Color**: Use `#2DA6A2` (teal) as the main brand color
+- **Primary Classes**: Use `bg-[#2DA6A2]`, `text-[#2DA6A2]`, `border-[#2DA6A2]` for primary elements
+- **Focus States**: Use `focus:ring-[#2DA6A2]`, `focus:border-[#2DA6A2]` for form elements
+- **Hover States**: Use `hover:bg-[#2DA6A2]`, `hover:text-[#2DA6A2]` for interactive elements
+- **Alternative**: Use `bg-teal-500` or `text-teal-500` as fallback when custom color not available
+
+## Responsive Breakpoints
+
+- **Mobile First**: Start with base classes (no prefix)
+- **Tablet**: Use `md:` prefix (768px and up)
+- **Desktop**: Use `lg:` prefix (1024px and up)
+- **Large Desktop**: Use `xl:` prefix (1280px and up)
+- **Extra Large**: Use `2xl:` prefix (1536px and up)
+
+## Layout & Spacing
+
+- Use `container` class for main content wrapper
+- Implement responsive padding: `p-4 md:p-6 lg:p-8`
+- Use responsive margins: `m-2 md:m-4 lg:m-6`
+- Apply responsive spacing between elements: `space-y-4 md:space-y-6 lg:space-y-8`
+
+## Grid & Flexbox
+
+- Mobile: Single column layout with `flex flex-col`
+- Tablet: `md:grid md:grid-cols-2` for 2-column layout
+- Desktop: `lg:grid lg:grid-cols-3` or `lg:grid lg:grid-cols-4` for multi-column
+- Use `gap-4 md:gap-6 lg:gap-8` for responsive spacing
+
+## Typography
+
+- Base text sizes: `text-sm md:text-base lg:text-lg`
+- Headings: `text-xl md:text-2xl lg:text-4xl`
+- Line heights: `leading-tight md:leading-normal lg:leading-relaxed`
+- Responsive font weights: `font-normal md:font-medium lg:font-semibold`
+
+## Navigation & Components
+
+- Mobile: Stack navigation items vertically
+- Tablet: Use horizontal layout with `md:flex md:flex-row`
+- Desktop: Full horizontal navigation with proper spacing
+- Implement hamburger menu for mobile, full menu for larger screens
+
+## Images & Media
+
+- Use `object-cover` for consistent image aspect ratios
+- Responsive sizing: `w-full md:w-auto lg:w-96`
+- Implement lazy loading and responsive image optimization
+
+## Interactive Elements
+
+- Touch-friendly button sizes on mobile: `min-h-[44px]`
+- Hover effects only on desktop: `lg:hover:scale-105`
+- Focus states for accessibility: `focus:ring-2 focus:ring-[#2DA6A2]`
+
+## Form Elements & Mobile Optimization
+
+- **Input & Textarea on Mobile**: Always use `text-base` (16px) to prevent iOS zoom
+- **Mobile Input Sizing**: Use `text-base md:text-sm lg:text-sm` for responsive font sizing
+- **Touch Targets**: Ensure minimum 44px height for all interactive elements on mobile
+- **Form Spacing**: Use `space-y-4 md:space-y-6` for form field spacing
+
+## Example Component Structure
+
+```jsx
+<div className="container mx-auto px-4 md:px-6 lg:px-8">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+    <div className="bg-white rounded-lg shadow-md p-4 md:p-6 lg:p-8">
+      <h2 className="text-lg md:text-xl lg:text-2xl font-semibold mb-3 md:mb-4 lg:mb-6">
+        Title
+      </h2>
+      <p className="text-sm md:text-base text-gray-600">Content</p>
+    </div>
+  </div>
+</div>
+
+### Form Elements Example
+```jsx
+<form className="space-y-4 md:space-y-6">
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+    <input 
+      type="email" 
+      className="w-full px-4 py-3 text-base md:text-sm lg:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2]"
+      placeholder="Enter your email"
+    />
+  </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+    <textarea 
+      className="w-full px-4 py-3 text-base md:text-sm lg:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2]"
+      rows={4}
+      placeholder="Enter your message"
+    />
+  </div>
+</form>
+```
+
+## Button Examples
+
+```jsx
+// Primary Button
+<button className="bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+  Primary Action
+</button>
+
+// Secondary Button
+<button className="border border-[#2DA6A2] text-[#2DA6A2] hover:bg-[#2DA6A2] hover:text-white font-medium py-2 px-4 rounded-lg transition-colors">
+  Secondary Action
+</button>
+
+// Outline Button
+<button className="text-[#2DA6A2] hover:bg-[#2DA6A2] hover:text-white font-medium py-2 px-4 rounded-lg border border-[#2DA6A2] transition-colors">
+  Outline Action
+</button>
+```
+
+## Card Examples
+
+```jsx
+// Primary Card
+<div className="bg-white rounded-lg shadow-md border-l-4 border-[#2DA6A2] p-4 md:p-6 lg:p-8">
+  <h3 className="text-lg md:text-xl font-semibold text-[#2DA6A2] mb-3">Card Title</h3>
+  <p className="text-gray-600">Card content goes here</p>
+</div>
+
+// Interactive Card
+<div className="bg-white rounded-lg shadow-md p-4 md:p-6 lg:p-8 hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 hover:border-[#2DA6A2]">
+  <h3 className="text-lg md:text-xl font-semibold mb-3">Interactive Card</h3>
+  <p className="text-gray-600">Hover to see effects</p>
+</div>
+```
+
+## Best Practices
+
+1. **Mobile First**: Always start with mobile styles, then enhance for larger screens
+2. **Consistent Spacing**: Use Tailwind's spacing scale (4, 6, 8, 12, 16, 20, 24, 32, 48, 64)
+3. **Semantic Colors**: Use Tailwind's color palette with semantic naming
+4. **Performance**: Minimize custom CSS, prefer utility classes
+5. **Accessibility**: Ensure proper contrast ratios and focus states
+6. **Testing**: Test on actual devices, not just browser dev tools
+
+## Common Responsive Patterns
+
+- **Cards**: `p-4 md:p-6 lg:p-8`
+- **Buttons**: `px-4 py-2 md:px-6 md:py-3 lg:px-8 lg:py-4`
+- **Text**: `text-sm md:text-base lg:text-lg`
+- **Form Inputs**: `text-base md:text-sm lg:text-sm` (16px on mobile to prevent zoom)
+- **Spacing**: `space-y-4 md:space-y-6 lg:space-y-8`
+- **Layout**: `flex-col md:flex-row lg:flex-row`
+- **Width**: `w-full md:w-auto lg:w-1/2`
+---
+
+# Tailwind CSS Responsive Design Rules
+
+## Core Principles
+
+- Always use Tailwind CSS utility classes for styling
+- Implement mobile-first responsive design approach
+- Use semantic class naming and consistent spacing
+- Follow Tailwind's responsive breakpoint system
+
+## Color Palette
+
+- **Primary Color**: Use `#2DA6A2` (teal) as the main brand color
+- **Primary Classes**: Use `bg-[#2DA6A2]`, `text-[#2DA6A2]`, `border-[#2DA6A2]` for primary elements
+- **Focus States**: Use `focus:ring-[#2DA6A2]`, `focus:border-[#2DA6A2]` for form elements
+- **Hover States**: Use `hover:bg-[#2DA6A2]`, `hover:text-[#2DA6A2]` for interactive elements
+- **Alternative**: Use `bg-teal-500` or `text-teal-500` as fallback when custom color not available
+
+## Responsive Breakpoints
+
+- **Mobile First**: Start with base classes (no prefix)
+- **Tablet**: Use `md:` prefix (768px and up)
+- **Desktop**: Use `lg:` prefix (1024px and up)
+- **Large Desktop**: Use `xl:` prefix (1280px and up)
+- **Extra Large**: Use `2xl:` prefix (1536px and up)
+
+## Layout & Spacing
+
+- Use `container` class for main content wrapper
+- Implement responsive padding: `p-4 md:p-6 lg:p-8`
+- Use responsive margins: `m-2 md:m-4 lg:m-6`
+- Apply responsive spacing between elements: `space-y-4 md:space-y-6 lg:space-y-8`
+
+## Grid & Flexbox
+
+- Mobile: Single column layout with `flex flex-col`
+- Tablet: `md:grid md:grid-cols-2` for 2-column layout
+- Desktop: `lg:grid lg:grid-cols-3` or `lg:grid lg:grid-cols-4` for multi-column
+- Use `gap-4 md:gap-6 lg:gap-8` for responsive spacing
+
+## Typography
+
+- Base text sizes: `text-sm md:text-base lg:text-lg`
+- Headings: `text-xl md:text-2xl lg:text-4xl`
+- Line heights: `leading-tight md:leading-normal lg:leading-relaxed`
+- Responsive font weights: `font-normal md:font-medium lg:font-semibold`
+
+## Navigation & Components
+
+- Mobile: Stack navigation items vertically
+- Tablet: Use horizontal layout with `md:flex md:flex-row`
+- Desktop: Full horizontal navigation with proper spacing
+- Implement hamburger menu for mobile, full menu for larger screens
+
+## Images & Media
+
+- Use `object-cover` for consistent image aspect ratios
+- Responsive sizing: `w-full md:w-auto lg:w-96`
+- Implement lazy loading and responsive image optimization
+
+## Interactive Elements
+
+- Touch-friendly button sizes on mobile: `min-h-[44px]`
+- Hover effects only on desktop: `lg:hover:scale-105`
+- Focus states for accessibility: `focus:ring-2 focus:ring-[#2DA6A2]`
+
+## Form Elements & Mobile Optimization
+
+- **Input & Textarea on Mobile**: Always use `text-base` (16px) to prevent iOS zoom
+- **Mobile Input Sizing**: Use `text-base md:text-sm lg:text-sm` for responsive font sizing
+- **Touch Targets**: Ensure minimum 44px height for all interactive elements on mobile
+- **Form Spacing**: Use `space-y-4 md:space-y-6` for form field spacing
+
+## Example Component Structure
+
+```jsx
+<div className="container mx-auto px-4 md:px-6 lg:px-8">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+    <div className="bg-white rounded-lg shadow-md p-4 md:p-6 lg:p-8">
+      <h2 className="text-lg md:text-xl lg:text-2xl font-semibold mb-3 md:mb-4 lg:mb-6">
+        Title
+      </h2>
+      <p className="text-sm md:text-base text-gray-600">Content</p>
+    </div>
+  </div>
+</div>
+
+### Form Elements Example
+```jsx
+<form className="space-y-4 md:space-y-6">
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+    <input 
+      type="email" 
+      className="w-full px-4 py-3 text-base md:text-sm lg:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2]"
+      placeholder="Enter your email"
+    />
+  </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+    <textarea 
+      className="w-full px-4 py-3 text-base md:text-sm lg:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2]"
+      rows={4}
+      placeholder="Enter your message"
+    />
+  </div>
+</form>
+```
+
+## Button Examples
+
+```jsx
+// Primary Button
+<button className="bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+  Primary Action
+</button>
+
+// Secondary Button
+<button className="border border-[#2DA6A2] text-[#2DA6A2] hover:bg-[#2DA6A2] hover:text-white font-medium py-2 px-4 rounded-lg transition-colors">
+  Secondary Action
+</button>
+
+// Outline Button
+<button className="text-[#2DA6A2] hover:bg-[#2DA6A2] hover:text-white font-medium py-2 px-4 rounded-lg border border-[#2DA6A2] transition-colors">
+  Outline Action
+</button>
+```
+
+## Card Examples
+
+```jsx
+// Primary Card
+<div className="bg-white rounded-lg shadow-md border-l-4 border-[#2DA6A2] p-4 md:p-6 lg:p-8">
+  <h3 className="text-lg md:text-xl font-semibold text-[#2DA6A2] mb-3">Card Title</h3>
+  <p className="text-gray-600">Card content goes here</p>
+</div>
+
+// Interactive Card
+<div className="bg-white rounded-lg shadow-md p-4 md:p-6 lg:p-8 hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 hover:border-[#2DA6A2]">
+  <h3 className="text-lg md:text-xl font-semibold mb-3">Interactive Card</h3>
+  <p className="text-gray-600">Hover to see effects</p>
+</div>
+```
+
+## Best Practices
+
+1. **Mobile First**: Always start with mobile styles, then enhance for larger screens
+2. **Consistent Spacing**: Use Tailwind's spacing scale (4, 6, 8, 12, 16, 20, 24, 32, 48, 64)
+3. **Semantic Colors**: Use Tailwind's color palette with semantic naming
+4. **Performance**: Minimize custom CSS, prefer utility classes
+5. **Accessibility**: Ensure proper contrast ratios and focus states
+6. **Testing**: Test on actual devices, not just browser dev tools
+
+## Common Responsive Patterns
+
+- **Cards**: `p-4 md:p-6 lg:p-8`
+- **Buttons**: `px-4 py-2 md:px-6 md:py-3 lg:px-8 lg:py-4`
+- **Text**: `text-sm md:text-base lg:text-lg`
+- **Form Inputs**: `text-base md:text-sm lg:text-sm` (16px on mobile to prevent zoom)
+- **Spacing**: `space-y-4 md:space-y-6 lg:space-y-8`
+- **Layout**: `flex-col md:flex-row lg:flex-row`
+- **Width**: `w-full md:w-auto lg:w-1/2`
+---

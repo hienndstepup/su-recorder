@@ -1,0 +1,130 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+
+export default function LoginPage() {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Xử lý đăng nhập ở đây
+    console.log('Login data:', formData);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        {/* Logo/Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#2DA6A2] rounded-full mb-4">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Đăng nhập</h1>
+          <p className="text-gray-600">Chào mừng bạn quay trở lại!</p>
+        </div>
+
+        {/* Form */}
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Email */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 text-base text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors"
+                placeholder="Nhập email của bạn"
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Mật khẩu
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 text-base text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors"
+                placeholder="Nhập mật khẩu"
+              />
+            </div>
+
+            {/* Remember me & Forgot password */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-[#2DA6A2] focus:ring-[#2DA6A2] border-gray-300 rounded"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                  Ghi nhớ đăng nhập
+                </label>
+              </div>
+              <Link href="/forgot-password" className="text-sm text-[#2DA6A2] hover:text-[#2DA6A2]/80 transition-colors">
+                Quên mật khẩu?
+              </Link>
+            </div>
+
+            {/* Submit button */}
+            <button
+              type="submit"
+              className="w-full bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white font-medium py-3 px-4 rounded-lg transition-colors focus:ring-2 focus:ring-[#2DA6A2] focus:ring-offset-2"
+            >
+              Đăng nhập
+            </button>
+          </form>
+
+
+          {/* Sign up link */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Chưa có tài khoản?{' '}
+              <Link href="/register" className="font-medium text-[#2DA6A2] hover:text-[#2DA6A2]/80 transition-colors">
+                Đăng ký ngay
+              </Link>
+            </p>
+          </div>
+
+          {/* Back to home */}
+          <div className="mt-4 text-center">
+            <Link
+              href="/"
+              className="inline-flex items-center text-sm text-gray-500 hover:text-[#2DA6A2] transition-colors"
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Về trang chủ
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
