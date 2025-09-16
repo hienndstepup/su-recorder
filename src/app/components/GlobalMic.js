@@ -73,7 +73,7 @@ const GlobalMic = ({
             className="w-full h-full"
           />
         ) : (
-          <img src="/assets/mic.svg" alt="Mic" className="w-10 h-10" />
+          <img src="/mic.svg" alt="Mic" className="w-10 h-10" />
         )}
       </div>
     </button>

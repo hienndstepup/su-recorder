@@ -2,12 +2,19 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const { signIn } = useAuth();
+  const router = useRouter();
 
   const handleChange = (e) => {
     setFormData({
@@ -16,10 +23,25 @@ export default function LoginPage() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Xử lý đăng nhập ở đây
-    console.log('Login data:', formData);
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await signIn(formData.email, formData.password);
+      
+      if (error) {
+        setError(error.message);
+      } else {
+        // Đăng nhập thành công, AuthContext sẽ tự động redirect
+        console.log('Đăng nhập thành công:', data);
+      }
+    } catch (err) {
+      setError('Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -38,6 +60,12 @@ export default function LoginPage() {
 
         {/* Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email */}
             <div>
@@ -94,9 +122,10 @@ export default function LoginPage() {
             {/* Submit button */}
             <button
               type="submit"
-              className="w-full bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white font-medium py-3 px-4 rounded-lg transition-colors focus:ring-2 focus:ring-[#2DA6A2] focus:ring-offset-2"
+              disabled={isLoading}
+              className="w-full bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 disabled:bg-[#2DA6A2]/50 text-white font-medium py-3 px-4 rounded-lg transition-colors focus:ring-2 focus:ring-[#2DA6A2] focus:ring-offset-2 disabled:cursor-not-allowed"
             >
-              Đăng nhập
+              {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </button>
           </form>
 
@@ -109,19 +138,6 @@ export default function LoginPage() {
                 Đăng ký ngay
               </Link>
             </p>
-          </div>
-
-          {/* Back to home */}
-          <div className="mt-4 text-center">
-            <Link
-              href="/"
-              className="inline-flex items-center text-sm text-gray-500 hover:text-[#2DA6A2] transition-colors"
-            >
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Về trang chủ
-            </Link>
           </div>
         </div>
       </div>

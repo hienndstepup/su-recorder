@@ -1,143 +1,261 @@
+"use client";
+
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import Header from "@/components/Header";
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    age: "",
+    region: "",
+  });
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [errors, setErrors] = useState({});
+  const dropdownRef = useRef(null);
+
+  const regions = [
+    { value: "north", label: "Miền Bắc" },
+    { value: "central", label: "Miền Trung" },
+    { value: "south", label: "Miền Nam" },
+  ];
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+    // Clear error when user starts typing
+    if (errors[e.target.name]) {
+      setErrors({
+        ...errors,
+        [e.target.name]: "",
+      });
+    }
+  };
+
+  const handleRegionSelect = (region) => {
+    setFormData({
+      ...formData,
+      region: region.value,
+    });
+    setIsDropdownOpen(false);
+    // Clear error when user selects region
+    if (errors.region) {
+      setErrors({
+        ...errors,
+        region: "",
+      });
+    }
+  };
+
+  const getSelectedRegionLabel = () => {
+    const selected = regions.find((region) => region.value === formData.region);
+    return selected ? selected.label : "Chọn khu vực";
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.age) {
+      newErrors.age = "Vui lòng nhập độ tuổi";
+    } else if (formData.age < 3 || formData.age > 18) {
+      newErrors.age = "Độ tuổi phải từ 3 đến 18";
+    }
+
+    if (!formData.region) {
+      newErrors.region = "Vui lòng chọn khu vực";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (validateForm()) {
+      // Redirect đến trang record
+      router.push("/record");
+    }
+  };
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 flex items-center">
-                <div className="w-8 h-8 bg-[#2DA6A2] rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                  </svg>
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
+        <Header />
+
+        {/* Main Content - Centered */}
+        <div className="flex-1 flex flex-col items-center justify-center p-4 transform -translate-y-20">
+          {/* Title */}
+          <div className="text-center mb-8 w-full max-w-4xl">
+            <h1 className="text-3xl md:text-4xl font-bold text-[#2DA6A2] mb-4">
+              Ứng Dụng Học Tiếng Việt và Tiếng Anh
+            </h1>
+            <p className="text-lg text-gray-600">
+              Luyện đọc và trả lời câu hỏi thú vị cho các bạn nhỏ!
+            </p>
+          </div>
+
+          {/* Form Card */}
+          <div className="w-full max-w-md">
+            <div className="bg-white rounded-2xl shadow-xl p-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Age Input */}
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-3">
+                    <svg
+                      className="w-5 h-5 mr-2 text-[#2DA6A2]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    Độ tuổi của con
+                  </label>
+                  <input
+                    type="number"
+                    name="age"
+                    value={formData.age}
+                    onChange={handleChange}
+                    min="3"
+                    max="18"
+                    required
+                    className={`w-full px-4 py-3 text-base text-gray-900 border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors ${
+                      errors.age ? "border-red-300" : "border-[#2DA6A2]"
+                    }`}
+                    placeholder="Nhập tuổi (3-18)"
+                  />
+                  {errors.age && (
+                    <p className="mt-1 text-sm text-red-600">{errors.age}</p>
+                  )}
                 </div>
-                <span className="ml-2 text-xl font-bold text-gray-900">SU Recorder</span>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/login"
-                className="text-gray-700 hover:text-[#2DA6A2] px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Đăng nhập
-              </Link>
-              <Link
-                href="/register"
-                className="bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Đăng ký
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
 
-      {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            Chào mừng đến với{' '}
-            <span className="text-[#2DA6A2]">SU Recorder</span>
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Nền tảng ghi âm và quản lý âm thanh chuyên nghiệp. 
-            Tạo, chỉnh sửa và chia sẻ các bản ghi âm của bạn một cách dễ dàng.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/register"
-              className="bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white font-medium py-3 px-8 rounded-lg transition-colors text-lg"
-            >
-              Bắt đầu ngay
-            </Link>
-            <Link
-              href="/login"
-              className="border border-[#2DA6A2] text-[#2DA6A2] hover:bg-[#2DA6A2] hover:text-white font-medium py-3 px-8 rounded-lg transition-colors text-lg"
-            >
-              Đăng nhập
-            </Link>
+                {/* Region Dropdown */}
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-3">
+                    <svg
+                      className="w-5 h-5 mr-2 text-[#2DA6A2]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                    Khu vực
+                  </label>
+                  <div className="relative" ref={dropdownRef}>
+                    {/* Custom Dropdown Button */}
+                    <button
+                      type="button"
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className={`w-full px-4 py-3 pr-4 text-base text-gray-900 border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors bg-white text-left flex items-center justify-between ${
+                        errors.region ? "border-red-300" : "border-[#2DA6A2]"
+                      }`}
+                    >
+                      <span
+                        className={
+                          formData.region ? "text-gray-900" : "text-gray-500"
+                        }
+                      >
+                        {getSelectedRegionLabel()}
+                      </span>
+                      <svg
+                        className={`w-4 h-4 text-[#2DA6A2] transition-transform ${
+                          isDropdownOpen ? "rotate-180" : ""
+                        }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+
+                    {/* Dropdown Options */}
+                    {isDropdownOpen && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-[#2DA6A2] rounded-lg shadow-lg">
+                        {regions.map((region) => (
+                          <button
+                            key={region.value}
+                            type="button"
+                            onClick={() => handleRegionSelect(region)}
+                            className={`w-full px-4 py-3 text-left text-base transition-colors first:rounded-t-lg last:rounded-b-lg hover:bg-[#2DA6A2]/10 ${
+                              formData.region === region.value
+                                ? "bg-[#2DA6A2]/20 text-[#2DA6A2] font-medium"
+                                : "text-gray-900 hover:text-[#2DA6A2]"
+                            }`}
+                          >
+                            <div className="flex items-center">
+                              <div
+                                className={`w-2 h-2 rounded-full mr-3 ${
+                                  formData.region === region.value
+                                    ? "bg-[#2DA6A2]"
+                                    : "bg-gray-300"
+                                }`}
+                              ></div>
+                              {region.label}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {errors.region && (
+                    <p className="mt-1 text-sm text-red-600">{errors.region}</p>
+                  )}
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  className="w-full bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white font-medium py-4 px-6 rounded-lg transition-colors text-lg"
+                >
+                  Bắt Đầu Ngay
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Features Section */}
-      <div className="bg-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Tính năng nổi bật
-            </h2>
-            <p className="text-xl text-gray-600">
-              Tất cả những gì bạn cần để tạo ra những bản ghi âm chất lượng cao
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center p-6">
-              <div className="w-16 h-16 bg-[#2DA6A2] rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Ghi âm chất lượng cao</h3>
-              <p className="text-gray-600">Ghi âm với chất lượng studio, hỗ trợ nhiều định dạng âm thanh</p>
-            </div>
-            
-            <div className="text-center p-6">
-              <div className="w-16 h-16 bg-[#2DA6A2] rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Chỉnh sửa dễ dàng</h3>
-              <p className="text-gray-600">Công cụ chỉnh sửa trực quan, cắt ghép âm thanh một cách chuyên nghiệp</p>
-            </div>
-            
-            <div className="text-center p-6">
-              <div className="w-16 h-16 bg-[#2DA6A2] rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Chia sẻ nhanh chóng</h3>
-              <p className="text-gray-600">Chia sẻ bản ghi âm với bạn bè và cộng đồng một cách dễ dàng</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-4">
-              <div className="w-8 h-8 bg-[#2DA6A2] rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                </svg>
-              </div>
-              <span className="ml-2 text-xl font-bold">SU Recorder</span>
-            </div>
-            <p className="text-gray-400 mb-4">
-              Nền tảng ghi âm và quản lý âm thanh chuyên nghiệp
-            </p>
-            <div className="flex justify-center space-x-6">
-              <Link href="/login" className="text-gray-400 hover:text-white transition-colors">
-                Đăng nhập
-              </Link>
-              <Link href="/register" className="text-gray-400 hover:text-white transition-colors">
-                Đăng ký
-              </Link>
-            </div>
-            <p className="text-gray-500 text-sm mt-6">
-              © 2024 SU Recorder. Tất cả quyền được bảo lưu.
-            </p>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </ProtectedRoute>
   );
 }
