@@ -1,23 +1,48 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import GlobalMic from "../components/GlobalMic";
 import { appApi } from "@/api/app";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 const RecordPage = () => {
+  const router = useRouter();
   const { user } = useAuth();
 
-  // Mock data - sẽ được thay thế bằng data thực tế
-  const currentQuestion = 1;
-  const totalQuestions = 30;
-  const question =
-    "Cậu có biết tại sao máy tính lại có thể tính toán nhanh như vậy không?";
+  // State để lưu danh sách câu hỏi và câu hỏi hiện tại
+  const [questions, setQuestions] = useState([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
+
+  // Fetch random questions khi component mount
+  useEffect(() => {
+    const fetchRandomQuestions = async () => {
+      try {
+        const { data, error } = await supabase
+          .rpc('select_random_questions', {
+            row_count: 30
+          });
+
+        if (error) throw error;
+        setQuestions(data || []);
+      } catch (error) {
+        console.error('Error fetching questions:', error.message);
+        alert('Không thể tải câu hỏi. Vui lòng thử lại sau.');
+      } finally {
+        setIsLoadingQuestions(false);
+      }
+    };
+
+    fetchRandomQuestions();
+  }, []);
 
   // State để lưu kết quả ASR
   const [asrResult, setAsrResult] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [audioDuration, setAudioDuration] = useState(0);
   const audioRef = useRef(null);
 
   const handleMicStart = () => {
@@ -26,33 +51,38 @@ const RecordPage = () => {
     setAsrResult(null);
   };
 
-  const handleAfterRecord = (blob) => {
+  const handleAfterRecord = async (blob) => {
     setIsProcessing(true);
-    const formData = new FormData();
-    let file = new File([blob], "audio.wav", { type: "audio/wav" });
-    formData.append("audio-file", file);
-    appApi
-      .checkAsr(formData)
-      .then((res) => {
-        const result = res?.data?.data;
-        console.log("handleAfterRecord", result);
-        setAsrResult(result);
+    try {
+      // Tạo form data và gửi lên ASR service
+      const formData = new FormData();
+      let file = new File([blob], "audio.wav", { type: "audio/wav" });
+      formData.append("audio-file", file);
+      
+      const res = await appApi.checkAsr(formData);
+      const result = res?.data?.data;
+      
+      // Reset audio duration khi có recording mới
+      setAudioDuration(0);
+      
+      console.log("handleAfterRecord", result);
+      setAsrResult(result);
 
-        // Tự động phát audio sau khi có kết quả
-        setTimeout(() => {
-          if (audioRef.current) {
-            audioRef.current.play().catch((error) => {
-              console.error("Error auto-playing audio:", error);
-            });
-          }
-        }, 500); // Delay 500ms để đảm bảo audio element đã render
-      })
-      .catch((error) => {
-        console.error("Error processing audio:", error);
-      })
-      .finally(() => {
-        setIsProcessing(false);
-      });
+      // Tự động phát audio sau khi có kết quả
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.play().catch((error) => {
+            console.error("Error auto-playing audio:", error);
+          });
+        }
+      }, 500);
+
+    } catch (error) {
+      console.error("Error processing audio:", error);
+      alert("Có lỗi xảy ra khi xử lý âm thanh. Vui lòng thử lại.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -76,23 +106,52 @@ const RecordPage = () => {
             {/* Question Header */}
             <div className="text-center mb-6">
               <h2 className="text-2xl md:text-4xl font-bold text-[#2DA6A2] mb-4">
-                Câu hỏi {currentQuestion}/{totalQuestions}
+                Câu hỏi {currentQuestionIndex + 1}/{questions.length || 30}
               </h2>
             </div>
 
-            {/* Prompt Box */}
-            <div className="bg-gray-100 rounded-xl p-4 mb-6">
-              <p className="text-purple-600 font-medium text-center text-lg md:text-xl">
-                Con hãy trả lời câu hỏi:
-              </p>
-            </div>
+            {isLoadingQuestions ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex items-center space-x-2 text-[#2DA6A2]">
+                  <div className="w-6 h-6 border-2 border-[#2DA6A2] border-t-transparent rounded-full animate-spin"></div>
+                  <span>Đang tải câu hỏi...</span>
+                </div>
+              </div>
+            ) : questions.length > 0 ? (
+              <>
+                {/* Prompt Box */}
+                <div className="bg-gray-100 rounded-xl p-4 mb-6">
+                  <p className="text-purple-600 font-medium text-center text-lg md:text-xl">
+                    Con hãy trả lời câu hỏi:
+                  </p>
+                </div>
 
-            {/* Question */}
-            <div className="mb-8">
-              <p className="text-gray-800 text-lg md:text-2xl leading-relaxed text-center font-bold">
-                {question}
-              </p>
-            </div>
+                {/* Question */}
+                <div className="mb-8">
+                  <p className="text-gray-800 text-lg md:text-2xl leading-relaxed text-center font-bold">
+                    {questions[currentQuestionIndex]?.text}
+                  </p>
+                </div>
+
+                {/* Question Type & Hint */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 mb-2">
+                    <span className="px-2 py-1 bg-gray-100 rounded">
+                      Loại: {questions[currentQuestionIndex]?.type}
+                    </span>
+                    {questions[currentQuestionIndex]?.hint && (
+                      <span className="px-2 py-1 bg-yellow-50 text-yellow-700 rounded">
+                        Gợi ý: {questions[currentQuestionIndex]?.hint}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8 text-red-600">
+                Không thể tải câu hỏi. Vui lòng tải lại trang.
+              </div>
+            )}
 
             {/* ASR Result - Above Mic */}
             {isProcessing && (
@@ -115,7 +174,17 @@ const RecordPage = () => {
 
                 {/* Audio Player */}
                 <div className="flex justify-center">
-                  <audio ref={audioRef} controls className="w-full max-w-md">
+                  <audio 
+                    ref={audioRef} 
+                    controls 
+                    className="w-full max-w-md"
+                    onLoadedMetadata={(e) => {
+                      // Làm tròn xuống để lấy số giây chính xác vì audio_duration là INTEGER
+                      const duration = Math.floor(e.target.duration);
+                      setAudioDuration(duration);
+                      console.log('Raw duration:', e.target.duration, 'Rounded duration:', duration);
+                    }}
+                  >
                     <source src={asrResult.audio_url} type="audio/wav" />
                     <source src={asrResult.audio_url} type="audio/mpeg" />
                     Trình duyệt của bạn không hỗ trợ thẻ audio.
@@ -139,13 +208,56 @@ const RecordPage = () => {
             {asrResult && (
               <div className="mt-8 flex justify-end">
                 <button
-                  onClick={() => {
-                    // Logic chuyển câu tiếp theo sẽ được thêm sau
-                    console.log("Chuyển câu tiếp theo");
+                  onClick={async () => {
+                    try {
+                      if (!asrResult?.audio_url) {
+                        alert('Vui lòng thu âm câu trả lời trước khi tiếp tục.');
+                        return;
+                      }
+
+                      // Lấy province_id từ localStorage
+                      const recorderInfo = JSON.parse(localStorage.getItem('recorderInfo') || '{}');
+                      const provinceId = recorderInfo.province;
+                      
+                      if (!provinceId) {
+                        alert('Không tìm thấy thông tin tỉnh/thành phố. Vui lòng quay lại trang chủ.');
+                        return;
+                      }
+
+                      // Lưu recording vào database
+                      const { error: recordingError } = await supabase
+                        .from('recordings')
+                        .insert({
+                          user_id: user.id,
+                          question_id: questions[currentQuestionIndex].id,
+                          province_id: provinceId,
+                          audio_url: asrResult.audio_url,
+                          audio_duration: audioDuration,
+                          audio_script: asrResult.audio_script,
+                          recorded_at: new Date().toISOString()
+                        });
+
+                      if (recordingError) throw recordingError;
+
+                      // Nếu là câu cuối cùng
+                      if (currentQuestionIndex === questions.length - 1) {
+                        alert('Chúc mừng bạn đã hoàn thành bài thu âm!');
+                        router.push('/dashboard');
+                        return;
+                      }
+
+                      // Chuyển sang câu tiếp theo
+                      setCurrentQuestionIndex(currentQuestionIndex + 1);
+                      setAsrResult(null); // Reset kết quả ASR khi chuyển câu
+
+                    } catch (error) {
+                      console.error('Error saving recording:', error);
+                      alert('Có lỗi xảy ra khi lưu bài thu âm. Vui lòng thử lại.');
+                    }
                   }}
                   className="bg-[#2DA6A2] cursor-pointer hover:bg-[#2DA6A2]/90 text-white font-medium py-3 px-8 rounded-lg transition-colors text-lg"
                 >
-                  Câu tiếp theo
+                  {currentQuestionIndex === questions.length - 1 ? 'Hoàn thành' : 'Lưu và tiếp tục'}
                 </button>
               </div>
             )}
