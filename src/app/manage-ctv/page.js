@@ -1,11 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
+import { supabase, supabaseAdmin } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ManageCTVPage() {
+  const { user } = useAuth();
+  const [currentUserProfile, setCurrentUserProfile] = useState(null);
+
+  // Lấy thông tin profile của user hiện tại (bao gồm affiliate_code)
+  useEffect(() => {
+    const fetchCurrentUserProfile = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (data && !error) {
+          setCurrentUserProfile(data);
+        }
+      }
+    };
+
+    fetchCurrentUserProfile();
+  }, [user]);
   const [searchTerm, setSearchTerm] = useState("");
   const [copiedLinkId, setCopiedLinkId] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -135,26 +158,47 @@ export default function ManageCTVPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm()) {
-      // TODO: Call API to create new CTV
-      console.log("Creating new CTV:", newCTV);
-      
-      // Reset form and close modal
-      setNewCTV({
-        name: "",
-        email: "",
-        password: "",
-        confirmPassword: ""
-      });
-      setErrors({});
-      setShowPassword(false);
-      setShowConfirmPassword(false);
-      setIsCreateModalOpen(false);
-      
-      // Show success message (you can add toast notification here)
-      alert("Tạo CTV mới thành công!");
+      try {
+        // Kiểm tra xem đã có affiliate_code chưa
+        if (!currentUserProfile?.affiliate_code) {
+          throw new Error('Không thể tạo CTV mới. Vui lòng thử lại sau.');
+        }
+
+        // Tạo user mới với Supabase Auth (sử dụng service role)
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+          email: newCTV.email,
+          password: newCTV.password,
+          email_confirm: true, // Tự động xác nhận email
+          user_metadata: {
+            full_name: newCTV.name,
+            referrer_code: currentUserProfile.affiliate_code, // Sử dụng affiliate_code của người tạo
+            role: 'ctv' // Mặc định là ctv
+          }
+        });
+
+        if (authError) throw authError;
+
+        // Reset form và đóng modal
+        setNewCTV({
+          name: "",
+          email: "",
+          password: "",
+          confirmPassword: ""
+        });
+        setErrors({});
+        setShowPassword(false);
+        setShowConfirmPassword(false);
+        setIsCreateModalOpen(false);
+        
+        // Thông báo thành công
+        alert("Tạo CTV mới thành công!");
+      } catch (error) {
+        console.error('Error creating CTV:', error.message);
+        setErrors({ submit: error.message });
+      }
     }
   };
 

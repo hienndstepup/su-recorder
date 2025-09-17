@@ -11,6 +11,7 @@ export default function RegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
+    referrerCode: "", // Thêm mã giới thiệu
   });
 
   const [errors, setErrors] = useState({});
@@ -73,7 +74,10 @@ export default function RegisterPage() {
         const { data, error } = await signUp(
           formData.email,
           formData.password,
-          { full_name: formData.fullName }
+          { 
+            full_name: formData.fullName,
+            referrer_code: formData.referrerCode || null // Thêm mã giới thiệu vào metadata
+          }
         );
 
         if (error) {
@@ -300,6 +304,25 @@ export default function RegisterPage() {
                       {errors.confirmPassword}
                     </p>
                   )}
+                </div>
+
+                {/* Referrer Code */}
+                <div>
+                  <label
+                    htmlFor="referrerCode"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Mã giới thiệu (không bắt buộc)
+                  </label>
+                  <input
+                    type="text"
+                    id="referrerCode"
+                    name="referrerCode"
+                    value={formData.referrerCode}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 text-base text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors"
+                    placeholder="Nhập mã giới thiệu nếu có"
+                  />
                 </div>
 
                 {/* Submit button */}
