@@ -49,12 +49,15 @@ export default function ManageCTVPage() {
   useEffect(() => {
     const fetchCTVList = async () => {
       try {
+        if (!user) return; // Không fetch nếu chưa có user
+
         setIsLoading(true);
         // Lấy danh sách profiles của CTV
         const { data: profilesData, error: profilesError } = await supabase
           .from("profiles")
           .select("*")
           .eq("role", "ctv")
+          .neq("id", user.id) // Loại trừ profile của người dùng hiện tại
           .order("created_at", { ascending: false });
 
         if (profilesError) throw profilesError;
@@ -69,7 +72,7 @@ export default function ManageCTVPage() {
     };
 
     fetchCTVList();
-  }, []);
+  }, [user]); // Thêm user vào dependency array
 
   // const filteredCTV = ctvList;
 
@@ -204,6 +207,25 @@ export default function ManageCTVPage() {
               <p className="text-base md:text-lg text-gray-600">
                 Quản lý và theo dõi hoạt động của các cộng tác viên
               </p>
+              <Link
+                href={`/manage-ctv/${user?.id}`}
+                className="inline-flex items-center text-[#2DA6A2] hover:text-[#2DA6A2]/80 text-sm md:text-base font-medium mt-2"
+              >
+                <span>Xem bài ghi âm của tôi</span>
+                <svg
+                  className="w-4 h-4 ml-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </Link>
             </div>
 
             {/* Actions */}

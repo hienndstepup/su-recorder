@@ -17,23 +17,24 @@ const RecordPage = () => {
   });
 
   // Fetch user stats
+  const fetchUserStats = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('total_recordings, total_duration')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      setUserStats(data);
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+    }
+  };
+
+  // Fetch initial stats when component mounts
   useEffect(() => {
-    const fetchUserStats = async () => {
-      if (!user) return;
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('total_recordings, total_duration')
-          .eq('id', user.id)
-          .single();
-
-        if (error) throw error;
-        setUserStats(data);
-      } catch (error) {
-        console.error('Error fetching user stats:', error);
-      }
-    };
-
     fetchUserStats();
   }, [user]);
 
@@ -312,10 +313,13 @@ const RecordPage = () => {
 
                       if (recordingError) throw recordingError;
 
+                      // Cập nhật lại thống kê
+                      await fetchUserStats();
+
                       // Nếu là câu cuối cùng
                       if (currentQuestionIndex === questions.length - 1) {
                         alert('Chúc mừng bạn đã hoàn thành bài thu âm!');
-                        router.push('/dashboard');
+                        router.push('/');
                         return;
                       }
 
