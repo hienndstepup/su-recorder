@@ -1,20 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 export default function ProfilePage() {
   const { user } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
+  // const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [profile, setProfile] = useState(null);
   const [formData, setFormData] = useState({
-    fullName: user?.user_metadata?.full_name || "",
-    email: user?.email || "",
-    phone: user?.user_metadata?.phone || "",
-    region: user?.user_metadata?.region || "",
-    bio: user?.user_metadata?.bio || ""
+    fullName: "",
+    email: "",
+    phone: "",
+    region: "",
+    bio: ""
   });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (error) throw error;
+
+        setProfile(data);
+        setFormData({
+          fullName: data.full_name || "",
+          email: user.email || "",
+          phone: data.phone || "",
+          region: data.province_id || "",
+          bio: data.bio || "",
+          affiliate_code: data.affiliate_code,
+          role: data.role,
+          status: data.status,
+          total_recordings: data.total_recordings,
+          total_duration: data.total_duration
+        });
+      } catch (error) {
+        console.error("Error fetching profile:", error.message);
+        alert("Không thể tải thông tin profile. Vui lòng thử lại sau.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
 
   const regions = [
     { value: "north", label: "Miền Bắc" },
@@ -22,45 +63,33 @@ export default function ProfilePage() {
     { value: "south", label: "Miền Nam" }
   ];
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  // Removed handleChange
 
-  const handleSave = () => {
-    // TODO: Implement save profile functionality
-    console.log("Saving profile:", formData);
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    setFormData({
-      fullName: user?.user_metadata?.full_name || "",
-      email: user?.email || "",
-      phone: user?.user_metadata?.phone || "",
-      region: user?.user_metadata?.region || "",
-      bio: user?.user_metadata?.bio || ""
-    });
-    setIsEditing(false);
-  };
+  // Removed edit functions
 
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
         <Header />
         
-        {/* Main Content */}
-        <div className="flex-1 p-4 md:p-6 lg:p-8">
-          <div className="max-w-4xl mx-auto">
+            {/* Main Content */}
+            <div className="flex-1 p-4 md:p-6 lg:p-8">
+              {isLoading ? (
+                <div className="max-w-4xl mx-auto flex items-center justify-center min-h-[400px]">
+                  <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#2DA6A2] border-t-transparent"></div>
+                    <p className="mt-2 text-gray-600">Đang tải thông tin...</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="max-w-4xl mx-auto">
             {/* Page Header */}
             <div className="mb-8">
               <h1 className="text-3xl md:text-4xl font-bold text-[#2DA6A2] mb-2">
                 Thông tin cá nhân
               </h1>
               <p className="text-lg text-gray-600">
-                Quản lý thông tin tài khoản và cài đặt cá nhân
+                Quản lý thông tin tài khoản
               </p>
             </div>
 
@@ -80,12 +109,24 @@ export default function ProfilePage() {
                   
                   <div className="space-y-2 text-sm text-gray-500">
                     <div className="flex justify-between">
+                      <span>Vai trò:</span>
+                      <span className="font-medium text-[#2DA6A2]">
+                        {formData.role === 'admin' ? 'Admin' : 'CTV'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Mã giới thiệu:</span>
+                      <span className="font-medium text-[#2DA6A2]">{formData.affiliate_code}</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span>Tham gia:</span>
                       <span>{new Date(user?.created_at).toLocaleDateString('vi-VN')}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Trạng thái:</span>
-                      <span className="text-green-600">Hoạt động</span>
+                      <span className={formData.status === 'active' ? 'text-green-600' : 'text-red-600'}>
+                        {formData.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -96,15 +137,11 @@ export default function ProfilePage() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Bài ghi âm</span>
-                      <span className="font-semibold text-[#2DA6A2]">0</span>
+                      <span className="font-semibold text-[#2DA6A2]">{formData.total_recordings || 0}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Hoàn thành</span>
-                      <span className="font-semibold text-green-600">0</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Đánh giá TB</span>
-                      <span className="font-semibold text-yellow-600">-</span>
+                      <span className="text-gray-600">Tổng thời lượng</span>
+                      <span className="font-semibold text-[#2DA6A2]">{formData.total_duration || 0} giây</span>
                     </div>
                   </div>
                 </div>
@@ -113,33 +150,10 @@ export default function ProfilePage() {
               {/* Profile Form */}
               <div className="lg:col-span-2">
                 <div className="bg-white rounded-lg shadow-md p-6">
-                  <div className="flex justify-between items-center mb-6">
+                  <div className="mb-6">
                     <h3 className="text-lg font-semibold text-gray-900">
                       Thông tin chi tiết
                     </h3>
-                    {!isEditing ? (
-                      <button
-                        onClick={() => setIsEditing(true)}
-                        className="bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                      >
-                        Chỉnh sửa
-                      </button>
-                    ) : (
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={handleCancel}
-                          className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                        >
-                          Hủy
-                        </button>
-                        <button
-                          onClick={handleSave}
-                          className="bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                        >
-                          Lưu
-                        </button>
-                      </div>
-                    )}
                   </div>
 
                   <form className="space-y-6">
@@ -148,17 +162,7 @@ export default function ProfilePage() {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Họ và tên
                         </label>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            name="fullName"
-                            value={formData.fullName}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2]"
-                          />
-                        ) : (
-                          <p className="text-gray-900 py-2">{formData.fullName || "Chưa cập nhật"}</p>
-                        )}
+                        <p className="text-gray-900 py-2">{formData.fullName || "Chưa cập nhật"}</p>
                       </div>
 
                       <div>
@@ -175,42 +179,16 @@ export default function ProfilePage() {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Số điện thoại
                         </label>
-                        {isEditing ? (
-                          <input
-                            type="tel"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2]"
-                          />
-                        ) : (
-                          <p className="text-gray-900 py-2">{formData.phone || "Chưa cập nhật"}</p>
-                        )}
+                        <p className="text-gray-900 py-2">{formData.phone || "Chưa cập nhật"}</p>
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Khu vực
                         </label>
-                        {isEditing ? (
-                          <select
-                            name="region"
-                            value={formData.region}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2]"
-                          >
-                            <option value="">Chọn khu vực</option>
-                            {regions.map(region => (
-                              <option key={region.value} value={region.value}>
-                                {region.label}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <p className="text-gray-900 py-2">
-                            {regions.find(r => r.value === formData.region)?.label || "Chưa cập nhật"}
-                          </p>
-                        )}
+                        <p className="text-gray-900 py-2">
+                          {regions.find(r => r.value === formData.region)?.label || "Chưa cập nhật"}
+                        </p>
                       </div>
                     </div>
 
@@ -218,55 +196,18 @@ export default function ProfilePage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Giới thiệu bản thân
                       </label>
-                      {isEditing ? (
-                        <textarea
-                          name="bio"
-                          value={formData.bio}
-                          onChange={handleChange}
-                          rows={4}
-                          className="w-full px-4 py-2 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2]"
-                          placeholder="Viết vài dòng về bản thân..."
-                        />
-                      ) : (
-                        <p className="text-gray-900 py-2">
-                          {formData.bio || "Chưa cập nhật"}
-                        </p>
-                      )}
+                      <p className="text-gray-900 py-2">
+                        {formData.bio || "Chưa cập nhật"}
+                      </p>
                     </div>
                   </form>
                 </div>
-
-                {/* Security Settings */}
-                <div className="bg-white rounded-lg shadow-md p-6 mt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Bảo mật
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-900">Đổi mật khẩu</h4>
-                        <p className="text-sm text-gray-500">Cập nhật mật khẩu để bảo mật tài khoản</p>
-                      </div>
-                      <button className="text-[#2DA6A2] hover:text-[#2DA6A2]/80 text-sm font-medium">
-                        Đổi mật khẩu
-                      </button>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-900">Xác thực 2 bước</h4>
-                        <p className="text-sm text-gray-500">Thêm lớp bảo mật cho tài khoản</p>
-                      </div>
-                      <button className="text-[#2DA6A2] hover:text-[#2DA6A2]/80 text-sm font-medium">
-                        Bật
-                      </button>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
+              </div>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
-    </ProtectedRoute>
+        </ProtectedRoute>
   );
 }

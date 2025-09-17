@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
+import { supabase } from "@/lib/supabase";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
@@ -12,16 +13,59 @@ export default function Home() {
   const [formData, setFormData] = useState({
     age: "",
     region: "",
+    province: "", // Thêm trường province
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [errors, setErrors] = useState({});
   const dropdownRef = useRef(null);
 
-  const regions = [
-    { value: "north", label: "Miền Bắc" },
-    { value: "central", label: "Miền Trung" },
-    { value: "south", label: "Miền Nam" },
-  ];
+  const [regions, setRegions] = useState([]);
+  const [provinces, setProvinces] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  // Fetch regions và provinces
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoadingData(true);
+        // Fetch regions
+        const { data: regionsData, error: regionsError } = await supabase
+          .from('regions')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+
+        if (regionsError) throw regionsError;
+
+        // Fetch provinces
+        const { data: provincesData, error: provincesError } = await supabase
+          .from('provinces')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+
+        if (provincesError) throw provincesError;
+
+        setRegions(regionsData.map(region => ({
+          value: region.code,
+          label: region.name
+        })));
+
+        setProvinces(provincesData.map(province => ({
+          value: province.id,
+          code: province.code,
+          label: province.name
+        })));
+      } catch (error) {
+        console.error('Error fetching data:', error.message);
+        alert('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -84,6 +128,10 @@ export default function Home() {
       newErrors.region = "Vui lòng chọn khu vực";
     }
 
+    if (!formData.province) {
+      newErrors.province = "Vui lòng chọn tỉnh/thành phố";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -92,8 +140,25 @@ export default function Home() {
     e.preventDefault();
 
     if (validateForm()) {
-      // Redirect đến trang record
-      router.push("/record");
+      try {
+        // Lưu thông tin người thu âm vào localStorage
+        const recorderInfo = {
+          age: formData.age,
+          region: formData.region,
+          province: formData.province,
+          // Thêm thông tin về tỉnh/thành phố và khu vực để hiển thị
+          provinceName: provinces.find(p => p.value === formData.province)?.label || '',
+          regionName: regions.find(r => r.value === formData.region)?.label || ''
+        };
+        
+        localStorage.setItem('recorderInfo', JSON.stringify(recorderInfo));
+        
+        // Redirect đến trang record
+        router.push("/record");
+      } catch (error) {
+        console.error('Error saving recorder info:', error);
+        alert('Có lỗi xảy ra khi lưu thông tin. Vui lòng thử lại.');
+      }
     }
   };
   return (
@@ -182,21 +247,29 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      disabled={isLoadingData}
                       className={`w-full px-4 py-3 pr-4 text-base text-gray-900 border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors bg-white text-left flex items-center justify-between ${
                         errors.region ? "border-red-300" : "border-[#2DA6A2]"
-                      }`}
+                      } ${isLoadingData ? "cursor-not-allowed bg-gray-50" : ""}`}
                     >
-                      <span
-                        className={
-                          formData.region ? "text-gray-900" : "text-gray-500"
-                        }
-                      >
-                        {getSelectedRegionLabel()}
-                      </span>
+                      {isLoadingData ? (
+                        <div className="flex items-center text-gray-500">
+                          <div className="w-4 h-4 border-2 border-[#2DA6A2] border-t-transparent rounded-full animate-spin mr-2"></div>
+                          <span>Đang tải...</span>
+                        </div>
+                      ) : (
+                        <span
+                          className={
+                            formData.region ? "text-gray-900" : "text-gray-500"
+                          }
+                        >
+                          {getSelectedRegionLabel()}
+                        </span>
+                      )}
                       <svg
                         className={`w-4 h-4 text-[#2DA6A2] transition-transform ${
                           isDropdownOpen ? "rotate-180" : ""
-                        }`}
+                        } ${isLoadingData ? "opacity-50" : ""}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -241,6 +314,70 @@ export default function Home() {
                   </div>
                   {errors.region && (
                     <p className="mt-1 text-sm text-red-600">{errors.region}</p>
+                  )}
+                </div>
+
+                {/* Province Dropdown */}
+                <div>
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-3">
+                    <svg
+                      className="w-5 h-5 mr-2 text-[#2DA6A2]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
+                      />
+                    </svg>
+                    Tỉnh/Thành phố
+                  </label>
+                  <div className="relative">
+                    <div className="relative">
+                      <select
+                        name="province"
+                        value={formData.province}
+                        onChange={handleChange}
+                        required
+                        disabled={isLoadingData}
+                        className={`w-full px-4 py-3 text-base text-gray-900 border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors appearance-none bg-white ${
+                          errors.province ? "border-red-300" : "border-[#2DA6A2]"
+                        } ${isLoadingData ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                      >
+                        <option value="">{isLoadingData ? "Đang tải..." : "Chọn tỉnh/thành phố"}</option>
+                        {!isLoadingData && provinces.map(province => (
+                          <option key={province.value} value={province.value}>
+                            {province.label}
+                          </option>
+                        ))}
+                      </select>
+                      {isLoadingData && (
+                        <div className="absolute right-10 top-1/2 transform -translate-y-1/2">
+                          <div className="w-4 h-4 border-2 border-[#2DA6A2] border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                      <svg
+                        className="w-4 h-4 text-[#2DA6A2]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  {errors.province && (
+                    <p className="mt-1 text-sm text-red-600">{errors.province}</p>
                   )}
                 </div>
 
