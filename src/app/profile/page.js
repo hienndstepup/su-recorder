@@ -5,6 +5,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -133,7 +134,28 @@ export default function ProfilePage() {
 
                 {/* Quick Stats */}
                 <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mt-4 md:mt-6">
-                  <h4 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">Thống kê</h4>
+                  <div className="flex items-center justify-between mb-3 md:mb-4">
+                    <h4 className="text-base md:text-lg font-semibold text-gray-900">Thống kê</h4>
+                    <Link
+                      href={`/manage-ctv/${user?.id}`}
+                      className="inline-flex items-center text-[#2DA6A2] hover:text-[#2DA6A2]/80 text-xs md:text-sm font-medium"
+                    >
+                      <span>Xem bài ghi âm</span>
+                      <svg
+                        className="w-4 h-4 ml-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </Link>
+                  </div>
                   <div className="space-y-2 md:space-y-3">
                     <div className="flex justify-between">
                       <span className="text-sm md:text-base text-gray-600">Bài ghi âm</span>

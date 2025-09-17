@@ -385,17 +385,12 @@ export default function ManageCTVPage() {
                             )}
                           </td>
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm font-medium">
-                            <div className="flex space-x-2">
-                              <Link
-                                href={`/manage-ctv/${ctv.id}`}
-                                className="text-[#2DA6A2] hover:text-[#2DA6A2]/80 hover:bg-[#2DA6A2]/10 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm"
-                              >
-                                Xem
-                              </Link>
-                              <button className="text-red-600 hover:text-red-800 hover:bg-red-50 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm">
-                                Xóa
-                              </button>
-                            </div>
+                            <Link
+                              href={`/manage-ctv/${ctv.id}`}
+                              className="text-[#2DA6A2] hover:text-[#2DA6A2]/80 hover:bg-[#2DA6A2]/10 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm"
+                            >
+                              Xem
+                            </Link>
                           </td>
                         </tr>
                       ))}

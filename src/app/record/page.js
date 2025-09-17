@@ -306,6 +306,7 @@ const RecordPage = () => {
                           audio_url: asrResult.audio_url,
                           audio_duration: audioDuration,
                           audio_script: asrResult.audio_script,
+                          age: recorderInfo.age,
                           recorded_at: new Date().toISOString()
                         });
 

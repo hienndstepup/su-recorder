@@ -27,6 +27,7 @@ export default function ManageCTVDetailPage() {
           audio_duration,
           audio_script,
           recorded_at,
+          age,
           questions (
             id,
             text,
@@ -233,6 +234,9 @@ export default function ManageCTVDetailPage() {
                         Audio
                       </th>
                       <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        Age
+                      </th>
+                      <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                         Tỉnh/thành phố
                       </th>
                     </tr>
@@ -284,6 +288,9 @@ export default function ManageCTVDetailPage() {
                                 </audio>
                               </div>
                             </div>
+                          </td>
+                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                            {record.age || "-"}
                           </td>
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                             {record.provinces?.name}

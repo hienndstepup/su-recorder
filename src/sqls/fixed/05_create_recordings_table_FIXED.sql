@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS recordings (
   audio_url TEXT,
   audio_duration INTEGER,
   audio_script TEXT,
+  age INTEGER,
   recorded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

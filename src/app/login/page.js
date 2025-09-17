@@ -34,8 +34,9 @@ export default function LoginPage() {
       if (error) {
         setError(error.message);
       } else {
-        // Đăng nhập thành công, AuthContext sẽ tự động redirect
+        // Đăng nhập thành công, chuyển về trang chủ
         console.log('Đăng nhập thành công:', data);
+        router.push('/');
       }
     } catch (err) {
       setError('Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.');
