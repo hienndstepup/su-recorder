@@ -6,7 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
 import { supabase } from "@/lib/supabase";
 
-export default function CTVProfilePage() {
+export default function ManageCTVDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [ctv, setCtv] = useState(null);
@@ -129,10 +129,10 @@ export default function CTVProfilePage() {
             <div className="mb-6">
               <button
                 onClick={() => router.back()}
-                className="flex items-center text-[#2DA6A2] hover:text-[#2DA6A2]/80 transition-colors"
+                className="flex items-center text-[#2DA6A2] hover:text-[#2DA6A2]/80 transition-colors text-sm md:text-base"
               >
                 <svg
-                  className="w-5 h-5 mr-2"
+                  className="w-4 h-4 md:w-5 md:h-5 mr-1.5 md:mr-2"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -150,20 +150,20 @@ export default function CTVProfilePage() {
 
             {/* Page Header */}
             <div className="mb-8">
-              <h1 className="text-3xl md:text-4xl font-bold text-[#2DA6A2] mb-2">
+              <h1 className="text-2xl md:text-4xl font-bold text-[#2DA6A2] mb-1 md:mb-2">
                 Thông tin CTV
               </h1>
-              <p className="text-lg text-gray-600">
+              <p className="text-base md:text-lg text-gray-600">
                 Chi tiết thông tin và hoạt động của cộng tác viên
               </p>
             </div>
 
             {/* Profile Summary Card */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6 md:mb-8">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center space-x-4 mb-4 md:mb-0">
-                  <div className="w-16 h-16 bg-[#2DA6A2] rounded-full flex items-center justify-center">
-                    <span className="text-white text-xl font-bold">
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-[#2DA6A2] rounded-full flex items-center justify-center">
+                    <span className="text-white text-lg md:text-xl font-bold">
                       {ctv.full_name
                         ?.split(" ")
                         .map((n) => n[0])
@@ -171,26 +171,35 @@ export default function CTVProfilePage() {
                     </span>
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900">
+                    <h3 className="text-lg md:text-xl font-semibold text-gray-900">
                       {ctv.full_name}
                     </h3>
-                    <p className="text-gray-600">{ctv.affiliate_code}</p>
+                    <p className="text-sm md:text-base text-gray-600">{ctv.affiliate_code}</p>
                   </div>
                 </div>
 
-                <div className="flex space-x-8">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-[#2DA6A2]">
+                <div className="flex flex-col md:flex-row md:space-x-8 space-y-4 md:space-y-0">
+                  <div className="flex justify-between md:block text-center">
+                    <div className="text-xs md:text-sm text-gray-600">Tổng bài ghi âm</div>
+                    <div className="text-xl md:text-2xl font-bold text-[#2DA6A2]">
                       {ctv.total_recordings || 0}
                     </div>
-                    <div className="text-sm text-gray-600">Tổng bài ghi âm</div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {ctv.total_duration || 0}
+                  <div className="flex justify-between md:block text-center">
+                    <div className="text-xs md:text-sm text-gray-600">Tổng thời lượng</div>
+                    <div className="text-xl md:text-2xl font-bold text-[#2DA6A2]">
+                      {((ctv.total_duration || 0) / 60).toFixed(1)} phút
                     </div>
-                    <div className="text-sm text-gray-600">
-                      Tổng thời lượng (giây)
+                  </div>
+                  <div className="flex justify-between md:block text-center">
+                    <div className="text-xs md:text-sm text-gray-600">Thành tiền</div>
+                    <div className="text-xl md:text-2xl font-bold text-green-600">
+                      {new Intl.NumberFormat("vi-VN", {
+                        style: "currency",
+                        currency: "VND",
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(((ctv.total_duration || 0) / 60 / 20) * 100000)}
                     </div>
                   </div>
                 </div>
@@ -201,10 +210,10 @@ export default function CTVProfilePage() {
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-base md:text-lg font-semibold text-gray-900">
                     Danh sách bài ghi âm
                   </h3>
-                  <p className="mt-1 text-sm text-yellow-600">
+                  <p className="mt-1 text-xs md:text-sm text-yellow-600">
                     * Lưu ý: Số giây hiển thị trên cột AUDIO được làm tròn
                   </p>
                 </div>
@@ -214,16 +223,16 @@ export default function CTVProfilePage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                         Câu hỏi
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                         Câu trả lời
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                         Audio
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                         Tỉnh/thành phố
                       </th>
                     </tr>
@@ -244,10 +253,10 @@ export default function CTVProfilePage() {
                     ) : recordings.length > 0 ? (
                       recordings.map((record) => (
                         <tr key={record.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                             {record.questions?.text}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-900 max-w-xs">
+                          <td className="px-4 md:px-6 py-3 md:py-4 text-xs md:text-sm text-gray-900 max-w-xs">
                             <div
                               className="truncate"
                               title={record.audio_script}
@@ -255,13 +264,13 @@ export default function CTVProfilePage() {
                               {record.audio_script}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-4 md:px-6 py-3 md:py-4">
                             <div className="space-y-3">
                               {/* Audio Player */}
                               <div className="flex justify-center">
                                 <audio
                                   controls
-                                  className="w-full max-w-xs min-w-[150px] h-[40px]"
+                                  className="w-full max-w-xs min-w-[220px] h-[40px]"
                                 >
                                   <source
                                     src={record.audio_url}
@@ -276,7 +285,7 @@ export default function CTVProfilePage() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                             {record.provinces?.name}
                           </td>
                         </tr>

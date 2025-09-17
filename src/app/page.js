@@ -23,49 +23,81 @@ export default function Home() {
   const [provinces, setProvinces] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
-  // Fetch regions và provinces
+  // Fetch regions
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchRegions = async () => {
       try {
         setIsLoadingData(true);
-        // Fetch regions
         const { data: regionsData, error: regionsError } = await supabase
-          .from('regions')
-          .select('*')
-          .eq('is_active', true)
-          .order('name');
+          .from("regions")
+          .select("*")
+          .eq("is_active", true)
+          .order("name");
 
         if (regionsError) throw regionsError;
 
-        // Fetch provinces
-        const { data: provincesData, error: provincesError } = await supabase
-          .from('provinces')
-          .select('*')
-          .eq('is_active', true)
-          .order('name');
-
-        if (provincesError) throw provincesError;
-
-        setRegions(regionsData.map(region => ({
-          value: region.code,
-          label: region.name
-        })));
-
-        setProvinces(provincesData.map(province => ({
-          value: province.id,
-          code: province.code,
-          label: province.name
-        })));
+        setRegions(
+          regionsData.map((region) => ({
+            value: region.code,
+            label: region.name,
+          }))
+        );
       } catch (error) {
-        console.error('Error fetching data:', error.message);
-        alert('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+        console.error("Error fetching regions:", error.message);
+        alert("Không thể tải dữ liệu khu vực. Vui lòng thử lại sau.");
       } finally {
         setIsLoadingData(false);
       }
     };
 
-    fetchData();
+    fetchRegions();
   }, []);
+
+  // Fetch provinces when region changes
+  useEffect(() => {
+    const fetchProvinces = async () => {
+      try {
+        setIsLoadingData(true);
+        let query = supabase
+          .from("provinces")
+          .select("*")
+          .eq("is_active", true);
+
+        // Filter by region if selected
+        if (formData.region) {
+          query = query.eq("region", formData.region);
+        }
+
+        const { data: provincesData, error: provincesError } =
+          await query.order("name");
+
+        if (provincesError) throw provincesError;
+
+        setProvinces(
+          provincesData.map((province) => ({
+            value: province.id,
+            code: province.code,
+            label: province.name,
+          }))
+        );
+
+        // Reset province selection when region changes
+        if (formData.province) {
+          setFormData((prev) => ({
+            ...prev,
+            province: "",
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching provinces:", error.message);
+        alert("Không thể tải dữ liệu tỉnh thành. Vui lòng thử lại sau.");
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    fetchProvinces();
+  }, [formData.region]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -147,17 +179,19 @@ export default function Home() {
           region: formData.region,
           province: formData.province,
           // Thêm thông tin về tỉnh/thành phố và khu vực để hiển thị
-          provinceName: provinces.find(p => p.value === formData.province)?.label || '',
-          regionName: regions.find(r => r.value === formData.region)?.label || ''
+          provinceName:
+            provinces.find((p) => p.value === formData.province)?.label || "",
+          regionName:
+            regions.find((r) => r.value === formData.region)?.label || "",
         };
-        
-        localStorage.setItem('recorderInfo', JSON.stringify(recorderInfo));
-        
+
+        localStorage.setItem("recorderInfo", JSON.stringify(recorderInfo));
+
         // Redirect đến trang record
         router.push("/record");
       } catch (error) {
-        console.error('Error saving recorder info:', error);
-        alert('Có lỗi xảy ra khi lưu thông tin. Vui lòng thử lại.');
+        console.error("Error saving recorder info:", error);
+        alert("Có lỗi xảy ra khi lưu thông tin. Vui lòng thử lại.");
       }
     }
   };
@@ -167,26 +201,26 @@ export default function Home() {
         <Header />
 
         {/* Main Content - Centered */}
-        <div className="flex-1 flex flex-col items-center justify-center p-4 transform -translate-y-20">
+        <div className="flex-1 flex flex-col items-center justify-center p-3 md:p-4 transform -translate-y-16 md:-translate-y-20">
           {/* Title */}
-          <div className="text-center mb-8 w-full max-w-4xl">
-            <h1 className="text-3xl md:text-4xl font-bold text-[#2DA6A2] mb-4">
+          <div className="text-center mb-6 md:mb-8 w-full max-w-4xl">
+            <h1 className="text-2xl md:text-4xl font-bold text-[#2DA6A2] mb-2 md:mb-4">
               Ứng Dụng Học Tiếng Việt và Tiếng Anh
             </h1>
-            <p className="text-lg text-gray-600">
+            <p className="text-base md:text-lg text-gray-600">
               Luyện đọc và trả lời câu hỏi thú vị cho các bạn nhỏ!
             </p>
           </div>
 
           {/* Form Card */}
           <div className="w-full max-w-md">
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-xl p-4 md:p-8">
+              <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
                 {/* Age Input */}
                 <div>
-                  <label className="flex items-center text-sm font-medium text-gray-700 mb-3">
+                  <label className="flex items-center text-xs md:text-sm font-medium text-gray-700 mb-2 md:mb-3">
                     <svg
-                      className="w-5 h-5 mr-2 text-[#2DA6A2]"
+                      className="w-4 h-4 md:w-5 md:h-5 mr-2 text-[#2DA6A2]"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -208,7 +242,7 @@ export default function Home() {
                     min="3"
                     max="18"
                     required
-                    className={`w-full px-4 py-3 text-base text-gray-900 border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors ${
+                    className={`w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base text-gray-900 border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors ${
                       errors.age ? "border-red-300" : "border-[#2DA6A2]"
                     }`}
                     placeholder="Nhập tuổi (3-18)"
@@ -220,9 +254,9 @@ export default function Home() {
 
                 {/* Region Dropdown */}
                 <div>
-                  <label className="flex items-center text-sm font-medium text-gray-700 mb-3">
+                  <label className="flex items-center text-xs md:text-sm font-medium text-gray-700 mb-2 md:mb-3">
                     <svg
-                      className="w-5 h-5 mr-2 text-[#2DA6A2]"
+                      className="w-4 h-4 md:w-5 md:h-5 mr-2 text-[#2DA6A2]"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -250,7 +284,9 @@ export default function Home() {
                       disabled={isLoadingData}
                       className={`w-full px-4 py-3 pr-4 text-base text-gray-900 border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors bg-white text-left flex items-center justify-between ${
                         errors.region ? "border-red-300" : "border-[#2DA6A2]"
-                      } ${isLoadingData ? "cursor-not-allowed bg-gray-50" : ""}`}
+                      } ${
+                        isLoadingData ? "cursor-not-allowed bg-gray-50" : ""
+                      }`}
                     >
                       {isLoadingData ? (
                         <div className="flex items-center text-gray-500">
@@ -319,9 +355,9 @@ export default function Home() {
 
                 {/* Province Dropdown */}
                 <div>
-                  <label className="flex items-center text-sm font-medium text-gray-700 mb-3">
+                  <label className="flex items-center text-xs md:text-sm font-medium text-gray-700 mb-2 md:mb-3">
                     <svg
-                      className="w-5 h-5 mr-2 text-[#2DA6A2]"
+                      className="w-4 h-4 md:w-5 md:h-5 mr-2 text-[#2DA6A2]"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -338,21 +374,35 @@ export default function Home() {
                   <div className="relative">
                     <div className="relative">
                       <select
+                        placeholder="Chọn tỉnh/thành phố"
                         name="province"
                         value={formData.province}
                         onChange={handleChange}
                         required
-                        disabled={isLoadingData}
-                        className={`w-full px-4 py-3 text-base text-gray-900 border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors appearance-none bg-white ${
-                          errors.province ? "border-red-300" : "border-[#2DA6A2]"
-                        } ${isLoadingData ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                        disabled={isLoadingData || !formData.region}
+                        className={`w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base text-gray-900 border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors appearance-none bg-white ${
+                          errors.province
+                            ? "border-red-300"
+                            : "border-[#2DA6A2]"
+                        } ${
+                          isLoadingData || !formData.region
+                            ? "bg-gray-50 cursor-not-allowed"
+                            : ""
+                        }`}
                       >
-                        <option value="">{isLoadingData ? "Đang tải..." : "Chọn tỉnh/thành phố"}</option>
-                        {!isLoadingData && provinces.map(province => (
-                          <option key={province.value} value={province.value}>
-                            {province.label}
-                          </option>
-                        ))}
+                        <option value="" className="text-gray-500">
+                          {isLoadingData
+                            ? "Đang tải..."
+                            : !formData.region
+                            ? "Vui lòng chọn khu vực trước"
+                            : "Chọn tỉnh/thành phố"}
+                        </option>
+                        {!isLoadingData &&
+                          provinces.map((province) => (
+                            <option key={province.value} value={province.value}>
+                              {province.label}
+                            </option>
+                          ))}
                       </select>
                       {isLoadingData && (
                         <div className="absolute right-10 top-1/2 transform -translate-y-1/2">
@@ -377,14 +427,16 @@ export default function Home() {
                     </div>
                   </div>
                   {errors.province && (
-                    <p className="mt-1 text-sm text-red-600">{errors.province}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.province}
+                    </p>
                   )}
                 </div>
 
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="w-full bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white font-medium py-4 px-6 rounded-lg transition-colors text-lg"
+                  className="w-full bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white font-medium py-3 px-4 md:py-4 md:px-6 rounded-lg transition-colors text-base md:text-lg"
                 >
                   Bắt Đầu Ngay
                 </button>

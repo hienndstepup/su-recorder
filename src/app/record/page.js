@@ -11,11 +11,48 @@ import { supabase } from "@/lib/supabase";
 const RecordPage = () => {
   const router = useRouter();
   const { user } = useAuth();
+  const [userStats, setUserStats] = useState({
+    total_recordings: 0,
+    total_duration: 0
+  });
+
+  // Fetch user stats
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      if (!user) return;
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('total_recordings, total_duration')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+        setUserStats(data);
+      } catch (error) {
+        console.error('Error fetching user stats:', error);
+      }
+    };
+
+    fetchUserStats();
+  }, [user]);
 
   // State để lưu danh sách câu hỏi và câu hỏi hiện tại
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
+
+  // Kiểm tra recorderInfo khi component mount
+  useEffect(() => {
+    const recorderInfo = JSON.parse(localStorage.getItem('recorderInfo') || '{}');
+    
+    // Kiểm tra các trường bắt buộc
+    if (!recorderInfo.age || !recorderInfo.province || !recorderInfo.region) {
+      alert('Vui lòng cung cấp đầy đủ thông tin trước khi ghi âm.');
+      router.push('/');
+      return;
+    }
+  }, [router]);
 
   // Fetch random questions khi component mount
   useEffect(() => {
@@ -89,7 +126,7 @@ const RecordPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         {/* User Info & Home Button */}
-        <div className="mb-4 flex justify-between items-center">
+        <div className="mb-6 flex justify-between items-center">
           <div className="text-sm text-gray-600">
             {user ? `Xin chào, ${user?.user_metadata?.full_name || user?.email}` : "Trang ghi âm"}
           </div>
@@ -99,6 +136,41 @@ const RecordPage = () => {
           >
             Về Trang chủ
           </Link>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="flex flex-col md:grid md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow-md p-3 md:p-4">
+            <div className="flex justify-between items-center md:block">
+              <div className="text-gray-500 text-xs md:text-sm md:mb-1">Đã ghi</div>
+              <div className="text-lg md:text-2xl font-bold text-[#2DA6A2]">
+                {userStats.total_recordings || 0}
+                <span className="text-xs md:text-sm font-normal text-gray-500 ml-1">bài</span>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-3 md:p-4">
+            <div className="flex justify-between items-center md:block">
+              <div className="text-gray-500 text-xs md:text-sm md:mb-1">Thời lượng</div>
+              <div className="text-lg md:text-2xl font-bold text-[#2DA6A2]">
+                {((userStats.total_duration || 0) / 60).toFixed(1)}
+                <span className="text-xs md:text-sm font-normal text-gray-500 ml-1">phút</span>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-3 md:p-4">
+            <div className="flex justify-between items-center md:block">
+              <div className="text-gray-500 text-xs md:text-sm md:mb-1">Thành tiền</div>
+              <div className="text-lg md:text-2xl font-bold text-green-600">
+                {new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                }).format(((userStats.total_duration || 0) / 60 / 20) * 100000)}
+              </div>
+            </div>
+          </div>
         </div>
 
           {/* Main Card */}

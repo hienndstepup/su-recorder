@@ -19,7 +19,7 @@ export default function Header() {
 
   // Function to get navigation item classes
   const getNavClasses = (path) => {
-    const baseClasses = "px-3 py-2 rounded-md text-sm font-medium transition-colors";
+    const baseClasses = "px-4 py-2.5 rounded-md text-base font-semibold transition-colors";
     if (isActive(path)) {
       return `${baseClasses} bg-[#2DA6A2] text-white`;
     }
@@ -28,7 +28,7 @@ export default function Header() {
 
   // Function to get mobile navigation item classes
   const getMobileNavClasses = (path) => {
-    const baseClasses = "block px-3 py-2 rounded-md text-base font-medium transition-colors";
+    const baseClasses = "block px-3 py-2 rounded-md text-sm md:text-base font-semibold transition-colors";
     if (isActive(path)) {
       return `${baseClasses} bg-[#2DA6A2] text-white`;
     }
@@ -38,14 +38,14 @@ export default function Header() {
   return (
     <nav className="bg-white shadow-sm relative z-1000">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="relative flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
-                <div className="w-8 h-8 bg-[#2DA6A2] rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-[#2DA6A2] rounded-lg flex items-center justify-center">
                   <svg
-                    className="w-5 h-5 text-white"
+                    className="w-5 h-5 md:w-6 md:h-6 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -58,7 +58,7 @@ export default function Header() {
                     />
                   </svg>
                 </div>
-                <span className="ml-2 text-xl font-bold text-gray-900">
+                <span className="ml-2 text-xl md:text-2xl font-bold text-gray-900">
                   SU Recorder
                 </span>
               </div>
@@ -95,24 +95,33 @@ export default function Header() {
 
           {/* User Info & Actions */}
           <div className="flex items-center space-x-4">
-            <span className="hidden sm:block text-gray-700 text-sm">
-              Xin chào, {user?.user_metadata?.full_name || user?.email}
-            </span>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                signOut();
-              }}
-              className="text-gray-700 hover:text-[#2DA6A2] px-3 py-2 rounded-md text-sm font-medium transition-colors"
-            >
-              Đăng xuất
-            </button>
+            <div className="hidden sm:flex items-center space-x-4">
+              <div className="w-10 h-10 bg-[#2DA6A2] rounded-full flex items-center justify-center" title={user?.user_metadata?.full_name || user?.email}>
+                <span className="text-white text-base font-medium">
+                  {(user?.user_metadata?.full_name || user?.email || "")
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2)}
+                </span>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  signOut();
+                }}
+                className="text-red-600 hover:text-red-800 hover:bg-red-50 px-4 py-2.5 rounded-md text-base font-semibold transition-colors"
+              >
+                Đăng xuất
+              </button>
+            </div>
             
             {/* Mobile menu button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-[#2DA6A2] hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#2DA6A2]"
+              className="md:hidden absolute right-4 top-1/2 -translate-y-1/2 inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-[#2DA6A2] hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#2DA6A2]"
             >
               <svg
                 className={`${isMobileMenuOpen ? 'hidden' : 'block'} h-6 w-6`}
@@ -167,9 +176,20 @@ export default function Header() {
                     Cá nhân
                   </Link>
                   <div className="border-t border-gray-200 pt-2 mt-2">
-                    <div className="px-3 py-2 text-sm text-gray-500">
+                    <div className="px-3 py-2 text-xs md:text-sm text-gray-500">
                       Xin chào, {user?.user_metadata?.full_name || user?.email}
                     </div>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        signOut();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 transition-colors"
+                    >
+                      Đăng xuất
+                    </button>
                   </div>
                 </div>
               </div>

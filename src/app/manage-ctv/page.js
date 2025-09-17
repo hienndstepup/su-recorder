@@ -194,14 +194,14 @@ export default function ManageCTVPage() {
         <Header />
 
         {/* Main Content */}
-        <div className="flex-1 p-4 md:p-6 lg:p-8">
+            <div className="flex-1 p-3 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             {/* Page Header */}
             <div className="mb-4">
-              <h1 className="text-3xl md:text-4xl font-bold text-[#2DA6A2] mb-2">
+              <h1 className="text-2xl md:text-4xl font-bold text-[#2DA6A2] mb-1 md:mb-2">
                 Quản lý CTV
               </h1>
-              <p className="text-lg text-gray-600">
+              <p className="text-base md:text-lg text-gray-600">
                 Quản lý và theo dõi hoạt động của các cộng tác viên
               </p>
             </div>
@@ -210,10 +210,10 @@ export default function ManageCTVPage() {
             <div className="flex justify-end mb-4">
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white font-medium py-2 px-6 rounded-lg transition-colors flex items-center"
+                className="bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white font-medium py-1.5 px-4 md:py-2 md:px-6 rounded-lg transition-colors flex items-center text-sm md:text-base"
               >
                 <svg
-                  className="w-5 h-5 mr-2"
+                  className="w-4 h-4 md:w-5 md:h-5 mr-1.5 md:mr-2"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -233,15 +233,15 @@ export default function ManageCTVPage() {
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-base md:text-lg font-semibold text-gray-900">
                     Danh sách CTV ({ctvList.length})
                   </h3>
-                  <div className="flex items-center space-x-6">
+                  <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-6">
                     <div className="flex items-center">
-                      <div className="text-sm font-medium text-gray-500 mr-2">
+                      <div className="text-xs md:text-sm font-medium text-gray-500 mr-2">
                         Tổng số bài ghi âm:
                       </div>
-                      <div className="text-lg font-semibold text-[#2DA6A2]">
+                      <div className="text-base md:text-lg font-semibold text-[#2DA6A2]">
                         {ctvList.reduce(
                           (sum, ctv) => sum + (ctv.total_recordings || 0),
                           0
@@ -249,15 +249,38 @@ export default function ManageCTVPage() {
                       </div>
                     </div>
                     <div className="flex items-center">
-                      <div className="text-sm font-medium text-gray-500 mr-2">
+                      <div className="text-xs md:text-sm font-medium text-gray-500 mr-2">
                         Tổng thời lượng:
                       </div>
-                      <div className="text-lg font-semibold text-[#2DA6A2]">
-                        {ctvList.reduce(
-                          (sum, ctv) => sum + (ctv.total_duration || 0),
-                          0
-                        )}{" "}
-                        giây
+                      <div className="text-base md:text-lg font-semibold text-[#2DA6A2]">
+                        {(
+                          ctvList.reduce(
+                            (sum, ctv) => sum + (ctv.total_duration || 0),
+                            0
+                          ) / 60
+                        ).toFixed(1)}{" "}
+                        phút
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="text-xs md:text-sm font-medium text-gray-500 mr-2">
+                        Thành tiền:
+                      </div>
+                      <div className="text-base md:text-lg font-semibold text-green-600">
+                        {new Intl.NumberFormat("vi-VN", {
+                          style: "currency",
+                          currency: "VND",
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        }).format(
+                          (ctvList.reduce(
+                            (sum, ctv) => sum + (ctv.total_duration || 0),
+                            0
+                          ) /
+                            60 /
+                            20) *
+                            100000
+                        )}
                       </div>
                     </div>
                   </div>
@@ -280,25 +303,28 @@ export default function ManageCTVPage() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                           Họ và tên
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                           Mã giới thiệu
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                           Số bài ghi âm
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                           Thời lượng
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                          Thành tiền
+                        </th>
+                        <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                           Trạng thái
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                           Ngày tạo
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                           Hành động
                         </th>
                       </tr>
@@ -308,8 +334,8 @@ export default function ManageCTVPage() {
                         <tr key={ctv.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <div className="w-10 h-10 bg-[#2DA6A2] rounded-full flex items-center justify-center">
-                                <span className="text-white text-sm font-medium">
+                              <div className="w-8 h-8 md:w-10 md:h-10 bg-[#2DA6A2] rounded-full flex items-center justify-center">
+                                <span className="text-white text-xs md:text-sm font-medium">
                                   {(ctv.full_name || "")
                                     .split(" ")
                                     .map((n) => n[0])
@@ -317,24 +343,32 @@ export default function ManageCTVPage() {
                                 </span>
                               </div>
                               <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">
+                                <div className="text-xs md:text-sm font-medium text-gray-900">
                                   {ctv.full_name || "Chưa cập nhật"}
                                 </div>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                             {ctv.affiliate_code}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                             {ctv.total_recordings}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {ctv.total_duration} giây
+                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
+                            {(ctv.total_duration / 60).toFixed(1)} phút
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
+                            {new Intl.NumberFormat("vi-VN", {
+                              style: "currency",
+                              currency: "VND",
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            }).format(((ctv.total_duration || 0) / 60 / 20) * 100000)}
+                          </td>
+                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                             <span
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              className={`px-1.5 md:px-2 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${
                                 ctv.status === "active"
                                   ? "bg-green-100 text-green-800"
                                   : "bg-red-100 text-red-800"
@@ -345,20 +379,20 @@ export default function ManageCTVPage() {
                                 : "Không hoạt động"}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                             {new Date(ctv.created_at).toLocaleDateString(
                               "vi-VN"
                             )}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm font-medium">
                             <div className="flex space-x-2">
                               <Link
-                                href={`/profile/${ctv.id}`}
-                                className="text-[#2DA6A2] hover:text-[#2DA6A2]/80 hover:bg-[#2DA6A2]/10 px-2 py-1 rounded transition-colors"
+                                href={`/manage-ctv/${ctv.id}`}
+                                className="text-[#2DA6A2] hover:text-[#2DA6A2]/80 hover:bg-[#2DA6A2]/10 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm"
                               >
                                 Xem
                               </Link>
-                              <button className="text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded transition-colors">
+                              <button className="text-red-600 hover:text-red-800 hover:bg-red-50 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm">
                                 Xóa
                               </button>
                             </div>
@@ -380,7 +414,7 @@ export default function ManageCTVPage() {
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-base md:text-lg font-semibold text-gray-900">
                 Thêm CTV mới
               </h3>
               <button
@@ -388,7 +422,7 @@ export default function ManageCTVPage() {
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5 md:w-6 md:h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -407,7 +441,7 @@ export default function ManageCTVPage() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {/* Họ và tên */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1.5 md:mb-2">
                   Họ và tên *
                 </label>
                 <input
@@ -415,7 +449,7 @@ export default function ManageCTVPage() {
                   name="name"
                   value={newCTV.name}
                   onChange={handleInputChange}
-                  className={`w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900 ${
+                  className={`w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900 ${
                     errors.name ? "border-red-500" : "border-gray-300"
                   }`}
                   placeholder="Nhập họ và tên"
@@ -427,7 +461,7 @@ export default function ManageCTVPage() {
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1.5 md:mb-2">
                   Email *
                 </label>
                 <input
@@ -435,7 +469,7 @@ export default function ManageCTVPage() {
                   name="email"
                   value={newCTV.email}
                   onChange={handleInputChange}
-                  className={`w-full px-4 py-3 text-base border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900 ${
+                  className={`w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900 ${
                     errors.email ? "border-red-500" : "border-gray-300"
                   }`}
                   placeholder="Nhập email"
@@ -447,7 +481,7 @@ export default function ManageCTVPage() {
 
               {/* Mật khẩu */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1.5 md:mb-2">
                   Mật khẩu *
                 </label>
                 <div className="relative">
@@ -456,7 +490,7 @@ export default function ManageCTVPage() {
                     name="password"
                     value={newCTV.password}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 pr-12 text-base border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900 ${
+                    className={`w-full px-3 py-2 md:px-4 md:py-3 pr-10 md:pr-12 text-sm md:text-base border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900 ${
                       errors.password ? "border-red-500" : "border-gray-300"
                     }`}
                     placeholder="Nhập mật khẩu"
@@ -510,7 +544,7 @@ export default function ManageCTVPage() {
 
               {/* Nhập lại mật khẩu */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1.5 md:mb-2">
                   Nhập lại mật khẩu *
                 </label>
                 <div className="relative">
@@ -519,7 +553,7 @@ export default function ManageCTVPage() {
                     name="confirmPassword"
                     value={newCTV.confirmPassword}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 pr-12 text-base border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900 ${
+                    className={`w-full px-3 py-2 md:px-4 md:py-3 pr-10 md:pr-12 text-sm md:text-base border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900 ${
                       errors.confirmPassword
                         ? "border-red-500"
                         : "border-gray-300"
@@ -580,13 +614,13 @@ export default function ManageCTVPage() {
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-3 py-1.5 md:px-4 md:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm md:text-base"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-[#2DA6A2] text-white rounded-lg hover:bg-[#2DA6A2]/90 transition-colors"
+                  className="flex-1 px-3 py-1.5 md:px-4 md:py-2 bg-[#2DA6A2] text-white rounded-lg hover:bg-[#2DA6A2]/90 transition-colors text-sm md:text-base"
                 >
                   Tạo CTV
                 </button>

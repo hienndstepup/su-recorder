@@ -73,7 +73,7 @@ export default function ProfilePage() {
         <Header />
         
             {/* Main Content */}
-            <div className="flex-1 p-4 md:p-6 lg:p-8">
+            <div className="flex-1 p-3 md:p-6 lg:p-8">
               {isLoading ? (
                 <div className="max-w-4xl mx-auto flex items-center justify-center min-h-[400px]">
                   <div className="text-center">
@@ -85,29 +85,29 @@ export default function ProfilePage() {
                 <div className="max-w-4xl mx-auto">
             {/* Page Header */}
             <div className="mb-8">
-              <h1 className="text-3xl md:text-4xl font-bold text-[#2DA6A2] mb-2">
+              <h1 className="text-2xl md:text-4xl font-bold text-[#2DA6A2] mb-1 md:mb-2">
                 Thông tin cá nhân
               </h1>
-              <p className="text-lg text-gray-600">
+              <p className="text-base md:text-lg text-gray-600">
                 Quản lý thông tin tài khoản
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
               {/* Profile Card */}
               <div className="lg:col-span-1">
-                <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                  <div className="w-24 h-24 bg-[#2DA6A2] rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-white text-2xl font-bold">
+                <div className="bg-white rounded-lg shadow-md p-4 md:p-6 text-center">
+                  <div className="w-20 h-20 md:w-24 md:h-24 bg-[#2DA6A2] rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                    <span className="text-white text-xl md:text-2xl font-bold">
                       {user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}
                     </span>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-1 md:mb-2">
                     {user?.user_metadata?.full_name || "Chưa cập nhật"}
                   </h3>
-                  <p className="text-gray-600 mb-4">{user?.email}</p>
+                  <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-4">{user?.email}</p>
                   
-                  <div className="space-y-2 text-sm text-gray-500">
+                  <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-gray-500">
                     <div className="flex justify-between">
                       <span>Vai trò:</span>
                       <span className="font-medium text-[#2DA6A2]">
@@ -132,16 +132,29 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Quick Stats */}
-                <div className="bg-white rounded-lg shadow-md p-6 mt-6">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Thống kê</h4>
-                  <div className="space-y-3">
+                <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mt-4 md:mt-6">
+                  <h4 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">Thống kê</h4>
+                  <div className="space-y-2 md:space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Bài ghi âm</span>
-                      <span className="font-semibold text-[#2DA6A2]">{formData.total_recordings || 0}</span>
+                      <span className="text-sm md:text-base text-gray-600">Bài ghi âm</span>
+                      <span className="text-sm md:text-base font-semibold text-[#2DA6A2]">{formData.total_recordings || 0}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Tổng thời lượng</span>
-                      <span className="font-semibold text-[#2DA6A2]">{formData.total_duration || 0} giây</span>
+                      <span className="text-sm md:text-base text-gray-600">Tổng thời lượng</span>
+                      <span className="text-sm md:text-base font-semibold text-[#2DA6A2]">
+                        {((formData.total_duration || 0) / 60).toFixed(1)} phút
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm md:text-base text-gray-600">Thành tiền</span>
+                      <span className="text-sm md:text-base font-semibold text-green-600">
+                        {new Intl.NumberFormat("vi-VN", {
+                          style: "currency",
+                          currency: "VND",
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        }).format(((formData.total_duration || 0) / 60 / 20) * 100000)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -149,7 +162,7 @@ export default function ProfilePage() {
 
               {/* Profile Form */}
               <div className="lg:col-span-2">
-                <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold text-gray-900">
                       Thông tin chi tiết
@@ -159,34 +172,34 @@ export default function ProfilePage() {
                   <form className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Họ và tên
-                        </label>
-                        <p className="text-gray-900 py-2">{formData.fullName || "Chưa cập nhật"}</p>
+                         <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
+                            Họ và tên
+                          </label>
+                        <p className="text-sm md:text-base text-gray-900 py-1.5 md:py-2">{formData.fullName || "Chưa cập nhật"}</p>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
                           Email
                         </label>
-                        <p className="text-gray-900 py-2">{formData.email}</p>
-                        <p className="text-xs text-gray-500">Email không thể thay đổi</p>
+                        <p className="text-sm md:text-base text-gray-900 py-1.5 md:py-2">{formData.email}</p>
+                        <p className="text-xs md:text-sm text-gray-500">Email không thể thay đổi</p>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
                           Số điện thoại
                         </label>
-                        <p className="text-gray-900 py-2">{formData.phone || "Chưa cập nhật"}</p>
+                        <p className="text-sm md:text-base text-gray-900 py-1.5 md:py-2">{formData.phone || "Chưa cập nhật"}</p>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
                           Khu vực
                         </label>
-                        <p className="text-gray-900 py-2">
+                        <p className="text-sm md:text-base text-gray-900 py-1.5 md:py-2">
                           {regions.find(r => r.value === formData.region)?.label || "Chưa cập nhật"}
                         </p>
                       </div>
