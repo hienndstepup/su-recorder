@@ -215,7 +215,7 @@ export default function ManageCTVDetailPage() {
                     Danh sách bài ghi âm
                   </h3>
                   <p className="mt-1 text-xs md:text-sm text-yellow-600">
-                    * Lưu ý: Số giây hiển thị trên cột AUDIO được làm tròn
+                    * Lưu ý: Số giây hiển thị trên cột AUDIO đã được làm tròn
                   </p>
                 </div>
               </div>

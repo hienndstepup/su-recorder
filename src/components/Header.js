@@ -19,7 +19,7 @@ export default function Header() {
 
   // Function to get navigation item classes
   const getNavClasses = (path) => {
-    const baseClasses = "px-4 py-2.5 rounded-md text-base font-semibold transition-colors";
+    const baseClasses = "px-2 md:px-3 lg:px-4 py-2 md:py-2 lg:py-2.5 rounded-md text-sm md:text-xs lg:text-base font-semibold transition-colors";
     if (isActive(path)) {
       return `${baseClasses} bg-[#2DA6A2] text-white`;
     }
@@ -43,9 +43,9 @@ export default function Header() {
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
-                <div className="w-8 h-8 md:w-10 md:h-10 bg-[#2DA6A2] rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 lg:w-10 lg:h-10 bg-[#2DA6A2] rounded-lg flex items-center justify-center">
                   <svg
-                    className="w-5 h-5 md:w-6 md:h-6 text-white"
+                    className="w-4 h-4 lg:w-6 lg:h-6 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -58,7 +58,7 @@ export default function Header() {
                     />
                   </svg>
                 </div>
-                <span className="ml-2 text-xl md:text-2xl font-bold text-gray-900">
+                <span className="ml-2 text-base md:text-sm lg:text-2xl font-bold text-gray-900">
                   SU Recorder
                 </span>
               </div>
@@ -66,7 +66,7 @@ export default function Header() {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-3 lg:space-x-8">
             <Link
               href="/"
               className={getNavClasses("/")}
@@ -95,9 +95,9 @@ export default function Header() {
 
           {/* User Info & Actions */}
           <div className="flex items-center space-x-4">
-            <div className="hidden sm:flex items-center space-x-4">
-              <div className="w-10 h-10 bg-[#2DA6A2] rounded-full flex items-center justify-center" title={user?.user_metadata?.full_name || user?.email}>
-                <span className="text-white text-base font-medium">
+            <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
+              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-[#2DA6A2] rounded-full flex items-center justify-center" title={user?.user_metadata?.full_name || user?.email}>
+                <span className="text-white text-xs md:text-xs lg:text-base font-medium">
                   {(user?.user_metadata?.full_name || user?.email || "")
                     .split(" ")
                     .map((n) => n[0])
@@ -112,7 +112,7 @@ export default function Header() {
                   e.stopPropagation();
                   signOut();
                 }}
-                className="text-red-600 hover:text-red-800 hover:bg-red-50 px-4 py-2.5 rounded-md text-base font-semibold transition-colors"
+                className="text-red-600 hover:text-red-800 hover:bg-red-50 px-2 lg:px-4 py-1.5 lg:py-2.5 rounded-md text-xs md:text-xs lg:text-base font-semibold transition-colors"
               >
                 Đăng xuất
               </button>
