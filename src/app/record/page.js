@@ -86,6 +86,26 @@ const RecordPage = () => {
   const [retryCount, setRetryCount] = useState(0);
   const audioRef = useRef(null);
   const maxRetries = 25; // 5 seconds (25 * 200ms)
+  const questionAudioRef = useRef(null);
+  const [hasPlayedAudio, setHasPlayedAudio] = useState(false);
+
+  // Effect để tự động phát audio của câu hỏi khi chuyển câu
+  useEffect(() => {
+    // Reset hasPlayedAudio khi chuyển câu
+    setHasPlayedAudio(false);
+
+    // Tự động phát audio nếu có và chưa phát lần nào
+    if (questions[currentQuestionIndex]?.audio_url && !hasPlayedAudio) {
+      const audio = new Audio(`${questions[currentQuestionIndex].audio_url}?t=${Date.now()}`);
+      audio.play()
+        .then(() => {
+          setHasPlayedAudio(true);
+        })
+        .catch(error => {
+          console.error("Error playing question audio:", error);
+        });
+    }
+  }, [currentQuestionIndex, questions]);
 
   // Effect để kiểm tra và retry khi asrResult thay đổi
   useEffect(() => {
@@ -308,6 +328,41 @@ const RecordPage = () => {
                 <p className="text-gray-800 text-lg md:text-2xl leading-relaxed text-center font-bold">
                   {questions[currentQuestionIndex]?.text}
                 </p>
+
+                {/* Question Audio Player */}
+                {questions[currentQuestionIndex]?.audio_url && (
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={() => {
+                        const audio = new Audio(`${questions[currentQuestionIndex].audio_url}?t=${Date.now()}`);
+                        audio.play()
+                          .then(() => {
+                            setHasPlayedAudio(true);
+                          })
+                          .catch(error => {
+                            console.error("Error playing question audio:", error);
+                          });
+                      }}
+                      className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                      title="Phát âm thanh"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-8 h-8 text-[#2DA6A2]"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Question Type & Hint */}
