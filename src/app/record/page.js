@@ -96,7 +96,14 @@ const RecordPage = () => {
     try {
       // Tạo form data và gửi lên ASR service
       const formData = new FormData();
-      let file = new File([blob], "audio.wav", { type: "audio/wav" });
+      
+      // Tạo tên file dựa trên user ID và timestamp
+      const timestamp = Math.floor(Date.now());
+      const fileName = `${user.id}-${timestamp}.wav`;
+
+      console.log("fileName", fileName);
+      
+      let file = new File([blob], fileName, { type: "audio/wav" });
       formData.append("audio_file", file);
       formData.append("device_id", getDeviceId());
 
@@ -210,11 +217,15 @@ const RecordPage = () => {
           ) : questions.length > 0 ? (
             <>
               {/* Prompt Box */}
-              <div className="bg-gray-100 rounded-xl p-4 mb-6">
-                <p className="text-purple-600 font-medium text-center text-lg md:text-xl">
-                  Con hãy trả lời câu hỏi:
-                </p>
-              </div>
+                <div className="bg-gray-100 rounded-xl p-4 mb-6">
+                  <p className="text-purple-600 font-medium text-center text-lg md:text-xl">
+                    {questions[currentQuestionIndex]?.type === "EN_TRA_LOI" 
+                      ? "Con hãy đọc theo:"
+                      : questions[currentQuestionIndex]?.type === "VI_TRA_LOI"
+                      ? "Con hãy trả lời câu hỏi:"
+                      : "Con hãy đọc theo:"}
+                  </p>
+                </div>
 
               {/* Question */}
               <div className="mb-8">
