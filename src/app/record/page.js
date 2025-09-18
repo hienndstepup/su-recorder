@@ -83,7 +83,46 @@ const RecordPage = () => {
   const [asrResult, setAsrResult] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [audioDuration, setAudioDuration] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
   const audioRef = useRef(null);
+  const maxRetries = 25; // 5 seconds (25 * 200ms)
+
+  // Effect để kiểm tra và retry khi asrResult thay đổi
+  useEffect(() => {
+    if (asrResult?.audio_url && retryCount > 0) {
+      const checkAudio = async () => {
+        try {
+          const response = await fetch(asrResult.audio_url, { method: 'HEAD' });
+          if (response.ok) {
+            // Audio đã sẵn sàng, phát
+            if (audioRef.current) {
+              audioRef.current.play().catch((error) => {
+                console.error("Error auto-playing audio:", error);
+              });
+            }
+          } else {
+            // Audio chưa sẵn sàng, retry sau 100ms
+            if (retryCount < maxRetries) {
+              setTimeout(() => {
+                setRetryCount(prev => prev + 1);
+                setAsrResult(prev => ({ ...prev, audio_url: `${prev.audio_url.split('?')[0]}?t=${Date.now()}` }));
+              }, 200);
+            }
+          }
+        } catch (error) {
+          // Lỗi khi kiểm tra audio, retry
+          if (retryCount < maxRetries) {
+            setTimeout(() => {
+              setRetryCount(prev => prev + 1);
+              setAsrResult(prev => ({ ...prev, audio_url: `${prev.audio_url.split('?')[0]}?t=${Date.now()}` }));
+            }, 200);
+          }
+        }
+      };
+
+      checkAudio();
+    }
+  }, [asrResult, retryCount]);
 
   const handleMicStart = () => {
     console.log("Bắt đầu ghi âm");
@@ -96,18 +135,21 @@ const RecordPage = () => {
     try {
       // Tạo form data và gửi lên ASR service
       const formData = new FormData();
-      
+
       // Tạo tên file dựa trên user ID và timestamp
       const timestamp = Math.floor(Date.now());
       const fileName = `${user.id}-${timestamp}.wav`;
 
       console.log("fileName", fileName);
-      
+
       let file = new File([blob], fileName, { type: "audio/wav" });
       formData.append("audio_file", file);
       formData.append("device_id", getDeviceId());
 
       const res = await appApi.checkAsrEnVn(formData);
+
+      // await new Promise((resolve) => setTimeout(resolve, 1000));
+
       const result = {
         audio_script: res?.data?.data?.text,
         audio_url: res?.data?.data?.audio,
@@ -117,16 +159,50 @@ const RecordPage = () => {
       setAudioDuration(0);
 
       console.log("handleAfterRecord", result);
+      
+      // Reset retry count
+      setRetryCount(0);
       setAsrResult(result);
 
-      // Tự động phát audio sau khi có kết quả
-      setTimeout(() => {
-        if (audioRef.current) {
-          audioRef.current.play().catch((error) => {
-            console.error("Error auto-playing audio:", error);
-          });
+      // Kiểm tra audio và retry nếu cần
+      const checkAudio = async () => {
+        try {
+          const response = await fetch(result.audio_url, { method: 'HEAD' });
+          if (response.ok) {
+            // Audio đã sẵn sàng, phát
+            if (audioRef.current) {
+              audioRef.current.play().catch((error) => {
+                console.error("Error auto-playing audio:", error);
+              });
+            }
+          } else {
+            // Audio chưa sẵn sàng, retry sau 100ms
+            if (retryCount < maxRetries) {
+              setTimeout(() => {
+                setRetryCount(prev => prev + 1);
+                setAsrResult({ ...result, audio_url: `${result.audio_url}?t=${Date.now()}` });
+              }, 200);
+            } else {
+              console.error("Failed to load audio after maximum retries");
+              alert("Không thể tải audio sau nhiều lần thử. Vui lòng thử lại.");
+            }
+          }
+        } catch (error) {
+          // Lỗi khi kiểm tra audio, retry
+          if (retryCount < maxRetries) {
+            setTimeout(() => {
+              setRetryCount(prev => prev + 1);
+              setAsrResult({ ...result, audio_url: `${result.audio_url}?t=${Date.now()}` });
+            }, 200);
+          } else {
+            console.error("Failed to load audio after maximum retries");
+            alert("Không thể tải audio sau nhiều lần thử. Vui lòng thử lại.");
+          }
         }
-      }, 500);
+      };
+
+      // Bắt đầu kiểm tra audio
+      checkAudio();
     } catch (error) {
       console.error("Error processing audio:", error);
       alert("Có lỗi xảy ra khi xử lý âm thanh. Vui lòng thử lại.");
@@ -217,15 +293,15 @@ const RecordPage = () => {
           ) : questions.length > 0 ? (
             <>
               {/* Prompt Box */}
-                <div className="bg-gray-100 rounded-xl p-4 mb-6">
-                  <p className="text-purple-600 font-medium text-center text-lg md:text-xl">
-                    {questions[currentQuestionIndex]?.type === "EN_TRA_LOI" 
-                      ? "Con hãy đọc theo:"
-                      : questions[currentQuestionIndex]?.type === "VI_TRA_LOI"
-                      ? "Con hãy trả lời câu hỏi:"
-                      : "Con hãy đọc theo:"}
-                  </p>
-                </div>
+              <div className="bg-gray-100 rounded-xl p-4 mb-6">
+                <p className="text-purple-600 font-medium text-center text-lg md:text-xl">
+                  {questions[currentQuestionIndex]?.type === "EN_TRA_LOI"
+                    ? "Con hãy đọc theo:"
+                    : questions[currentQuestionIndex]?.type === "VI_TRA_LOI"
+                    ? "Con hãy trả lời câu hỏi:"
+                    : "Con hãy đọc theo:"}
+                </p>
+              </div>
 
               {/* Question */}
               <div className="mb-8">
@@ -279,6 +355,7 @@ const RecordPage = () => {
                   ref={audioRef}
                   controls
                   className="w-full max-w-md"
+                  src={`${asrResult.audio_url}?t=${Date.now()}`}
                   onLoadedMetadata={(e) => {
                     // Làm tròn xuống để lấy số giây chính xác vì audio_duration là INTEGER
                     const duration = Math.floor(e.target.duration);
@@ -291,9 +368,9 @@ const RecordPage = () => {
                     );
                   }}
                 >
-                  <source src={asrResult.audio_url} type="audio/wav" />
-                  <source src={asrResult.audio_url} type="audio/mpeg" />
-                  <source src={asrResult.audio_url} type="audio/mp3" />
+                  <source src={`${asrResult.audio_url}?t=${Date.now()}`} type="audio/wav" />
+                  <source src={`${asrResult.audio_url}?t=${Date.now()}`} type="audio/mpeg" />
+                  <source src={`${asrResult.audio_url}?t=${Date.now()}`} type="audio/mp3" />
                   Trình duyệt của bạn không hỗ trợ thẻ audio.
                 </audio>
               </div>
