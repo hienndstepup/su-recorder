@@ -295,10 +295,10 @@ const RecordPage = () => {
         </div>
 
         {/* Main Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12">
+        <div className="bg-white rounded-2xl shadow-xl p-4 md:p-12">
           {/* Question Header */}
-          <div className="text-center mb-6">
-            <h2 className="text-2xl md:text-4xl font-bold text-[#2DA6A2] mb-4">
+          <div className="text-center">
+            <h2 className="text-2xl md:text-4xl font-bold text-[#2DA6A2] mb-2 md:mb-4">
               Câu hỏi {currentQuestionIndex + 1}/{questions.length || 30}
             </h2>
           </div>
@@ -313,7 +313,7 @@ const RecordPage = () => {
           ) : questions.length > 0 ? (
             <>
               {/* Prompt Box */}
-              <div className="bg-gray-100 rounded-xl p-4 mb-6">
+              <div className="bg-gray-100 rounded-xl p-2 md:p-4 mb-2 md:mb-6">
                 <p className="text-purple-600 font-medium text-center text-lg md:text-xl">
                   {questions[currentQuestionIndex]?.type === "EN_TRA_LOI"
                     ? "Con hãy đọc theo:"
@@ -324,7 +324,7 @@ const RecordPage = () => {
               </div>
 
               {/* Question */}
-              <div className="mb-8">
+              <div className="mb-4 md:mb-8">
                 <p className="text-gray-800 text-lg md:text-2xl leading-relaxed text-center font-bold">
                   {questions[currentQuestionIndex]?.text}
                 </p>
@@ -346,20 +346,23 @@ const RecordPage = () => {
                       className="p-2 rounded-full hover:bg-gray-100 transition-colors"
                       title="Phát âm thanh"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                        className="w-8 h-8 text-[#2DA6A2]"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z"
-                        />
-                      </svg>
+                      <div className="flex flex-col items-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                          className="w-8 h-8 text-[#2DA6A2]"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z"
+                          />
+                        </svg>
+                        <span className="text-sm text-gray-600 mt-1">Bấm để phát lại âm thanh</span>
+                      </div>
                     </button>
                   </div>
                 )}
@@ -368,9 +371,6 @@ const RecordPage = () => {
               {/* Question Type & Hint */}
               <div className="mb-6">
                 <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 mb-2">
-                  <span className="px-2 py-1 bg-gray-100 rounded">
-                    Loại: {questions[currentQuestionIndex]?.type}
-                  </span>
                   {questions[currentQuestionIndex]?.hint && (
                     <span className="px-2 py-1 bg-yellow-50 text-yellow-700 rounded">
                       Gợi ý: {questions[currentQuestionIndex]?.hint}
@@ -398,7 +398,7 @@ const RecordPage = () => {
           {asrResult && (
             <div className="mb-6">
               {/* Audio Script */}
-              <div className="bg-gray-50 rounded-xl p-4 mb-4">
+              <div className="bg-gray-50 rounded-xl p-2 md:p-4 mb-2 md:mb-4">
                 <p className="text-gray-700 text-center font-medium text-lg">
                   {asrResult.audio_script}
                 </p>
@@ -435,8 +435,8 @@ const RecordPage = () => {
           {/* Microphone Button */}
           <div className="flex justify-center">
             <GlobalMic
-              width={110}
-              height={74}
+              width={100}
+              height={64}
               onStart={handleMicStart}
               onComplete={handleAfterRecord}
               className="shadow-lg hover:shadow-xl transition-shadow"
@@ -503,7 +503,7 @@ const RecordPage = () => {
                     );
                   }
                 }}
-                className="bg-[#2DA6A2] cursor-pointer hover:bg-[#2DA6A2]/90 text-white font-medium py-3 px-8 rounded-lg transition-colors text-lg"
+                className="bg-[#2DA6A2] cursor-pointer hover:bg-[#2DA6A2]/90 text-white font-medium py-2 px-4 md:py-3 md:px-8 rounded-lg transition-colors text-base md:text-lg"
               >
                 {currentQuestionIndex === questions.length - 1
                   ? "Hoàn thành"
