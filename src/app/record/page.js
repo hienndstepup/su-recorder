@@ -82,10 +82,11 @@ const RecordPage = () => {
   // State để lưu kết quả ASR
   const [asrResult, setAsrResult] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [audioDuration, setAudioDuration] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
   const audioRef = useRef(null);
-  const maxRetries = 25; // 5 seconds (25 * 200ms)
+  const maxRetries = 25; // 5 seconds (25 * 400ms)
   const questionAudioRef = useRef(null);
   const [hasPlayedAudio, setHasPlayedAudio] = useState(false);
 
@@ -110,23 +111,22 @@ const RecordPage = () => {
   // Effect để kiểm tra và retry khi asrResult thay đổi
   useEffect(() => {
     if (asrResult?.audio_url && retryCount > 0) {
+      setIsLoadingAudio(true);
       const checkAudio = async () => {
         try {
           const response = await fetch(asrResult.audio_url, { method: 'HEAD' });
           if (response.ok) {
-            // Audio đã sẵn sàng, phát
-            if (audioRef.current) {
-              audioRef.current.play().catch((error) => {
-                console.error("Error auto-playing audio:", error);
-              });
-            }
+            // Audio đã sẵn sàng
+            setIsLoadingAudio(false);
           } else {
-            // Audio chưa sẵn sàng, retry sau 100ms
+            // Audio chưa sẵn sàng, retry sau 400ms
             if (retryCount < maxRetries) {
               setTimeout(() => {
                 setRetryCount(prev => prev + 1);
                 setAsrResult(prev => ({ ...prev, audio_url: `${prev.audio_url.split('?')[0]}?t=${Date.now()}` }));
-              }, 200);
+              }, 400);
+            } else {
+              setIsLoadingAudio(false);
             }
           }
         } catch (error) {
@@ -135,7 +135,9 @@ const RecordPage = () => {
             setTimeout(() => {
               setRetryCount(prev => prev + 1);
               setAsrResult(prev => ({ ...prev, audio_url: `${prev.audio_url.split('?')[0]}?t=${Date.now()}` }));
-            }, 200);
+            }, 400);
+          } else {
+            setIsLoadingAudio(false);
           }
         }
       };
@@ -152,6 +154,7 @@ const RecordPage = () => {
 
   const handleAfterRecord = async (blob) => {
     setIsProcessing(true);
+    setIsLoadingAudio(true);
     try {
       // Tạo form data và gửi lên ASR service
       const formData = new FormData();
@@ -189,19 +192,14 @@ const RecordPage = () => {
         try {
           const response = await fetch(result.audio_url, { method: 'HEAD' });
           if (response.ok) {
-            // Audio đã sẵn sàng, phát
-            if (audioRef.current) {
-              audioRef.current.play().catch((error) => {
-                console.error("Error auto-playing audio:", error);
-              });
-            }
+            // Audio đã sẵn sàng
           } else {
             // Audio chưa sẵn sàng, retry sau 100ms
             if (retryCount < maxRetries) {
               setTimeout(() => {
                 setRetryCount(prev => prev + 1);
                 setAsrResult({ ...result, audio_url: `${result.audio_url}?t=${Date.now()}` });
-              }, 200);
+              }, 400);
             } else {
               console.error("Failed to load audio after maximum retries");
               alert("Không thể tải audio sau nhiều lần thử. Vui lòng thử lại.");
@@ -213,7 +211,7 @@ const RecordPage = () => {
             setTimeout(() => {
               setRetryCount(prev => prev + 1);
               setAsrResult({ ...result, audio_url: `${result.audio_url}?t=${Date.now()}` });
-            }, 200);
+            }, 400);
           } else {
             console.error("Failed to load audio after maximum retries");
             alert("Không thể tải audio sau nhiều lần thử. Vui lòng thử lại.");
@@ -386,7 +384,7 @@ const RecordPage = () => {
           )}
 
           {/* ASR Result - Above Mic */}
-          {isProcessing && (
+          {(isProcessing || isLoadingAudio) && (
             <div className="mb-6 text-center">
               <div className="inline-flex items-center space-x-2 text-[#2DA6A2]">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#2DA6A2]"></div>
