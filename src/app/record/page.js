@@ -62,8 +62,14 @@ const RecordPage = () => {
   useEffect(() => {
     const fetchRandomQuestions = async () => {
       try {
-        const { data, error } = await supabase.rpc("select_random_questions", {
+        // Lấy age từ localStorage
+        const recorderInfo = JSON.parse(localStorage.getItem("recorderInfo") || "{}");
+        const userAge = parseInt(recorderInfo.age) || 0;
+
+        // Gọi hàm mới với age
+        const { data, error } = await supabase.rpc("select_random_questions_by_age", {
           row_count: 30,
+          user_age: userAge
         });
 
         if (error) throw error;
@@ -329,11 +335,9 @@ const RecordPage = () => {
               {/* Prompt Box */}
               <div className="bg-gray-100 rounded-xl p-2 md:p-4 mb-2 md:mb-6">
                 <p className="text-purple-600 font-medium text-center text-lg md:text-xl">
-                  {questions[currentQuestionIndex]?.type === "EN_TRA_LOI"
+                  {questions[currentQuestionIndex]?.type === "EN_NHAI_THEO"
                     ? "Con hãy đọc theo:"
-                    : questions[currentQuestionIndex]?.type === "VI_TRA_LOI"
-                    ? "Con hãy trả lời câu hỏi:"
-                    : "Con hãy đọc theo:"}
+                    : "Con hãy trả lời câu hỏi:"}
                 </p>
               </div>
 
