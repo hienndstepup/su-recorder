@@ -323,7 +323,7 @@ export default function ProfilePage() {
                                 value={editData.full_name}
                                 onChange={handleChange}
                                 placeholder="Nhập họ và tên đầy đủ"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm text-gray-900"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-base md:text-sm text-gray-900"
                               />
                             </div>
 
@@ -337,7 +337,7 @@ export default function ProfilePage() {
                                 value={editData.id_number}
                                 onChange={handleChange}
                                 placeholder="Nhập số CCCD"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm text-gray-900"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-base md:text-sm text-gray-900"
                               />
                             </div>
                           </div>
@@ -354,7 +354,7 @@ export default function ProfilePage() {
                                 value={editData.address}
                                 onChange={handleChange}
                                 placeholder="Nhập địa chỉ"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm text-gray-900"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-base md:text-sm text-gray-900"
                               />
                             </div>
 
@@ -368,7 +368,7 @@ export default function ProfilePage() {
                                 value={editData.phone}
                                 onChange={handleChange}
                                 placeholder="Nhập số điện thoại"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm text-gray-900"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-base md:text-sm text-gray-900"
                               />
                             </div>
                           </div>
@@ -389,7 +389,7 @@ export default function ProfilePage() {
                                   value={editData.bank_account_name}
                                   onChange={handleChange}
                                   placeholder="Nhập tên chủ tài khoản"
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm text-gray-900"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-base md:text-sm text-gray-900"
                                 />
                               </div>
 
@@ -403,7 +403,7 @@ export default function ProfilePage() {
                                   value={editData.bank_name}
                                   onChange={handleChange}
                                   placeholder="Nhập tên ngân hàng"
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm text-gray-900"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-base md:text-sm text-gray-900"
                                 />
                               </div>
 
@@ -417,7 +417,7 @@ export default function ProfilePage() {
                                   value={editData.bank_account_number}
                                   onChange={handleChange}
                                   placeholder="Nhập số tài khoản"
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm text-gray-900"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-base md:text-sm text-gray-900"
                                 />
                               </div>
                             </div>

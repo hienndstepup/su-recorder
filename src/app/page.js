@@ -152,8 +152,8 @@ export default function Home() {
 
     if (!formData.age) {
       newErrors.age = "Vui lòng nhập độ tuổi";
-    } else if (formData.age < 3 || formData.age > 18) {
-      newErrors.age = "Độ tuổi phải từ 3 đến 18";
+    } else if (formData.age < 6 || formData.age > 12) {
+      newErrors.age = "Độ tuổi phải từ 6 đến 12";
     }
 
     if (!formData.region) {
@@ -239,13 +239,13 @@ export default function Home() {
                     name="age"
                     value={formData.age}
                     onChange={handleChange}
-                    min="3"
-                    max="18"
+                    min="6"
+                    max="12"
                     required
-                    className={`w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base text-gray-900 border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors ${
+                    className={`w-full px-3 py-2 md:px-4 md:py-3 text-base text-gray-900 border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors ${
                       errors.age ? "border-red-300" : "border-[#2DA6A2]"
                     }`}
-                    placeholder="Nhập tuổi (3-18)"
+                    placeholder="Nhập tuổi (6-12)"
                   />
                   {errors.age && (
                     <p className="mt-1 text-sm text-red-600">{errors.age}</p>
@@ -380,7 +380,7 @@ export default function Home() {
                         onChange={handleChange}
                         required
                         disabled={isLoadingData || !formData.region}
-                        className={`w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base text-gray-900 border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors appearance-none bg-white ${
+                        className={`w-full px-3 py-2 md:px-4 md:py-3 text-base text-gray-900 border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors appearance-none bg-white ${
                           errors.province
                             ? "border-red-300"
                             : "border-[#2DA6A2]"
