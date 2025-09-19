@@ -45,6 +45,8 @@ export default function ManageCTVPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedCTV, setSelectedCTV] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedUserDetail, setSelectedUserDetail] = useState(null);
 
   const [ctvList, setCtvList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -415,7 +417,25 @@ export default function ManageCTVPage() {
                         <tr key={ctv.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <div className="w-8 h-8 md:w-10 md:h-10 bg-[#2DA6A2] rounded-full flex items-center justify-center">
+                              <div
+                                className={`w-8 h-8 overflow-hidden md:w-10 md:h-10 bg-[#2DA6A2] rounded-full flex items-center justify-center border-2 ${
+                                  ctv.phone &&
+                                  ctv.id_number &&
+                                  ctv.address &&
+                                  ctv.bank_account_name &&
+                                  ctv.bank_name &&
+                                  ctv.bank_account_number
+                                    ? "border-[#2DA6A2]"
+                                    : !ctv.phone &&
+                                      !ctv.id_number &&
+                                      !ctv.address &&
+                                      !ctv.bank_account_name &&
+                                      !ctv.bank_name &&
+                                      !ctv.bank_account_number
+                                    ? "border-red-500"
+                                    : "border-orange-400"
+                                }`}
+                              >
                                 <span className="text-white text-xs md:text-sm font-medium">
                                   {(ctv.full_name || "")
                                     .split(" ")
@@ -424,9 +444,15 @@ export default function ManageCTVPage() {
                                 </span>
                               </div>
                               <div className="ml-4">
-                                <div className="text-xs md:text-sm font-medium text-gray-900">
+                                <button
+                                  onClick={() => {
+                                    setSelectedUserDetail(ctv);
+                                    setIsDetailModalOpen(true);
+                                  }}
+                                  className="text-xs md:text-sm font-medium text-gray-900 hover:text-[#2DA6A2] transition-colors text-left"
+                                >
                                   {ctv.full_name || "Chưa cập nhật"}
-                                </div>
+                                </button>
                                 <div className="text-[10px] md:text-xs mt-0.5">
                                   {ctv.phone &&
                                   ctv.id_number &&
@@ -447,7 +473,7 @@ export default function ManageCTVPage() {
                                       Chưa điền thông tin
                                     </span>
                                   ) : (
-                                    <span className="text-orange-500">
+                                    <span className="text-orange-400">
                                       Thiếu thông tin
                                     </span>
                                   )}
@@ -726,6 +752,168 @@ export default function ManageCTVPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* User Detail Modal */}
+      {isDetailModalOpen && selectedUserDetail && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 relative max-h-[90vh] overflow-y-auto">
+            {/* Close button */}
+            <button
+              onClick={() => {
+                setIsDetailModalOpen(false);
+                setSelectedUserDetail(null);
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Header with Avatar */}
+            <div className="flex items-center mb-6">
+              <div className={`w-12 h-12 md:w-14 md:h-14 bg-[#2DA6A2] rounded-full flex items-center justify-center border-2 ${
+                selectedUserDetail.phone &&
+                selectedUserDetail.id_number &&
+                selectedUserDetail.address &&
+                selectedUserDetail.bank_account_name &&
+                selectedUserDetail.bank_name &&
+                selectedUserDetail.bank_account_number
+                  ? "border-[#2DA6A2]"
+                  : !selectedUserDetail.phone &&
+                    !selectedUserDetail.id_number &&
+                    !selectedUserDetail.address &&
+                    !selectedUserDetail.bank_account_name &&
+                    !selectedUserDetail.bank_name &&
+                    !selectedUserDetail.bank_account_number
+                  ? "border-red-500"
+                  : "border-orange-400"
+              }`}>
+                <span className="text-white text-lg font-medium">
+                  {(selectedUserDetail.full_name || "").split(" ").map((n) => n[0]).join("")}
+                </span>
+              </div>
+              <div className="ml-4">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {selectedUserDetail.full_name || "Chưa cập nhật"}
+                </h3>
+                <p className="text-sm text-[#2DA6A2] font-medium">
+                  {selectedUserDetail.affiliate_code}
+                </p>
+              </div>
+            </div>
+
+            {/* Info Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Basic Info Section */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-gray-900 border-b pb-2">Thông tin cơ bản</h4>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500">Vai trò</p>
+                    <p className="text-sm text-gray-900">{selectedUserDetail.role === "ctv" ? "Cộng tác viên" : "Admin"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Trạng thái</p>
+                    <p className={`text-sm ${selectedUserDetail.status === "active" ? "text-green-600" : "text-red-600"}`}>
+                      {selectedUserDetail.status === "active" ? "Hoạt động" : "Không hoạt động"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Số điện thoại</p>
+                    <p className={`text-sm ${selectedUserDetail.phone ? "text-gray-900" : "text-red-500"}`}>
+                      {selectedUserDetail.phone || "Chưa cập nhật"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Số CCCD</p>
+                    <p className={`text-sm ${selectedUserDetail.id_number ? "text-gray-900" : "text-red-500"}`}>
+                      {selectedUserDetail.id_number || "Chưa cập nhật"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Địa chỉ</p>
+                    <p className={`text-sm ${selectedUserDetail.address ? "text-gray-900" : "text-red-500"}`}>
+                      {selectedUserDetail.address || "Chưa cập nhật"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bank Info Section */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-gray-900 border-b pb-2">Thông tin ngân hàng</h4>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500">Tên chủ tài khoản</p>
+                    <p className={`text-sm ${selectedUserDetail.bank_account_name ? "text-gray-900" : "text-red-500"}`}>
+                      {selectedUserDetail.bank_account_name || "Chưa cập nhật"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Tên ngân hàng</p>
+                    <p className={`text-sm ${selectedUserDetail.bank_name ? "text-gray-900" : "text-red-500"}`}>
+                      {selectedUserDetail.bank_name || "Chưa cập nhật"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Số tài khoản</p>
+                    <p className={`text-sm ${selectedUserDetail.bank_account_number ? "text-gray-900" : "text-red-500"}`}>
+                      {selectedUserDetail.bank_account_number || "Chưa cập nhật"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Section */}
+              <div className="space-y-4 md:col-span-2">
+                <h4 className="text-sm font-medium text-gray-900 border-b pb-2">Thống kê</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-xs text-gray-500 mb-1">Số bài ghi âm</p>
+                    <p className="text-lg font-semibold text-[#2DA6A2]">{selectedUserDetail.total_recordings}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-xs text-gray-500 mb-1">Tổng thời lượng</p>
+                    <p className="text-lg font-semibold text-[#2DA6A2]">
+                      {(selectedUserDetail.total_duration / 60).toFixed(1)} phút
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-xs text-gray-500 mb-1">Thành tiền</p>
+                    <p className="text-lg font-semibold text-green-600">
+                      {new Intl.NumberFormat("vi-VN", {
+                        style: "currency",
+                        currency: "VND",
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(((selectedUserDetail.total_duration || 0) / 60 / 20) * 100000)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Time Info */}
+              <div className="md:col-span-2 pt-4 border-t">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500">Ngày tạo</p>
+                    <p className="text-sm text-gray-900">
+                      {new Date(selectedUserDetail.created_at).toLocaleDateString("vi-VN")}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Cập nhật lần cuối</p>
+                    <p className="text-sm text-gray-900">
+                      {new Date(selectedUserDetail.updated_at).toLocaleDateString("vi-VN")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
