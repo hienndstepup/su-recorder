@@ -247,9 +247,9 @@ export default function ManageCTVPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center space-y-3 md:space-y-0 mb-4">
               {/* Search and Sort */}
-              <div className="flex items-end space-x-4">
+              <div className="flex flex-col md:flex-row md:items-end space-y-3 md:space-y-0 md:space-x-4">
                 {/* Search Input */}
                 <div className="flex flex-col space-y-1">
                   <label className="text-xs text-gray-600 font-medium">
@@ -261,10 +261,10 @@ export default function ManageCTVPage() {
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Tìm kiếm theo tên..."
-                      className="text-gray-700 pl-10 pr-4 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm md:text-base w-60"
+                      className="text-gray-700 pl-10 pr-4 h-9 md:h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm md:text-base w-full md:w-60"
                     />
                     <svg
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-gray-400"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
@@ -288,7 +288,7 @@ export default function ManageCTVPage() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="text-gray-700 px-4 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm md:text-base bg-white min-w-[120px]"
+                    className="text-gray-700 px-3 md:px-4 h-9 md:h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm md:text-base bg-white w-full md:w-auto md:min-w-[120px]"
                   >
                     <option value="all">Tất cả</option>
                     <option value="most">Nhiều nhất</option>
@@ -299,7 +299,7 @@ export default function ManageCTVPage() {
 
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white font-medium py-1.5 px-4 md:py-2 md:px-6 rounded-lg transition-colors flex items-center text-sm md:text-base"
+                className="bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white font-medium py-1.5 px-4 md:py-2 md:px-6 rounded-lg transition-colors flex items-center text-sm md:text-base w-full md:w-auto justify-center md:justify-start"
               >
                 <svg
                   className="w-4 h-4 md:w-5 md:h-5 mr-1.5 md:mr-2"
