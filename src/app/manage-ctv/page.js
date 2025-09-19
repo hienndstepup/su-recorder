@@ -30,6 +30,7 @@ export default function ManageCTVPage() {
     fetchCurrentUserProfile();
   }, [user]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("all"); // "all", "most", "least"
   const [copiedLinkId, setCopiedLinkId] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newCTV, setNewCTV] = useState({
@@ -77,10 +78,19 @@ export default function ManageCTVPage() {
     fetchCTVList();
   }, [user]); // Thêm user vào dependency array
 
-  // Filter CTV list based on search term
-  const filteredCTV = ctvList.filter(ctv => 
-    ctv.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter and sort CTV list
+  const filteredCTV = ctvList
+    .filter((ctv) =>
+      ctv.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortBy === "most") {
+        return (b.total_recordings || 0) - (a.total_recordings || 0);
+      } else if (sortBy === "least") {
+        return (a.total_recordings || 0) - (b.total_recordings || 0);
+      }
+      return 0; // "all" - giữ nguyên thứ tự
+    });
 
   const handleCopyLink = async (link, ctvId) => {
     try {
@@ -203,7 +213,7 @@ export default function ManageCTVPage() {
         <Header />
 
         {/* Main Content */}
-            <div className="flex-1 p-3 md:p-6 lg:p-8">
+        <div className="flex-1 p-3 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             {/* Page Header */}
             <div className="mb-4">
@@ -236,29 +246,53 @@ export default function ManageCTVPage() {
 
             {/* Actions */}
             <div className="flex justify-between items-center mb-4">
-              {/* Search Input */}
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Tìm kiếm theo tên..."
-                  className="text-gray-700 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm md:text-base w-64 md:w-80"
-                />
-                <svg
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
+              {/* Search and Sort */}
+              <div className="flex items-end space-x-4">
+                {/* Search Input */}
+                <div className="flex flex-col space-y-1">
+                  <label className="text-xs text-gray-600 font-medium">
+                    Tìm kiếm
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Tìm kiếm theo tên..."
+                      className="text-gray-700 pl-10 pr-4 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm md:text-base w-60"
+                    />
+                    <svg
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Sort Select */}
+                <div className="flex flex-col space-y-1">
+                  <label className="text-xs text-gray-600 font-medium">
+                    Số bài ghi âm
+                  </label>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="text-gray-700 px-4 h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm md:text-base bg-white min-w-[120px]"
+                  >
+                    <option value="all">Tất cả</option>
+                    <option value="most">Nhiều nhất</option>
+                    <option value="least">Ít nhất</option>
+                  </select>
+                </div>
               </div>
 
               <button
@@ -286,9 +320,9 @@ export default function ManageCTVPage() {
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <h3 className="text-base md:text-lg font-semibold text-gray-900">
-                  Danh sách CTV ({filteredCTV.length}/{ctvList.length})
-                </h3>
+                  <h3 className="text-base md:text-lg font-semibold text-gray-900">
+                    Danh sách CTV ({filteredCTV.length}/{ctvList.length})
+                  </h3>
                   <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-6">
                     <div className="flex items-center">
                       <div className="text-xs md:text-sm font-medium text-gray-500 mr-2">
@@ -360,9 +394,6 @@ export default function ManageCTVPage() {
                           Họ và tên
                         </th>
                         <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                          Mã giới thiệu
-                        </th>
-                        <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                           Số bài ghi âm
                         </th>
                         <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
@@ -370,9 +401,6 @@ export default function ManageCTVPage() {
                         </th>
                         <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                           Thành tiền
-                        </th>
-                        <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                          Trạng thái
                         </th>
                         <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                           Ngày tạo
@@ -399,14 +427,46 @@ export default function ManageCTVPage() {
                                 <div className="text-xs md:text-sm font-medium text-gray-900">
                                   {ctv.full_name || "Chưa cập nhật"}
                                 </div>
+                                <div className="text-[10px] md:text-xs mt-0.5">
+                                  {ctv.phone &&
+                                  ctv.id_number &&
+                                  ctv.address &&
+                                  ctv.bank_account_name &&
+                                  ctv.bank_name &&
+                                  ctv.bank_account_number ? (
+                                    <span className="text-[#2DA6A2]">
+                                      Đầy đủ thông tin
+                                    </span>
+                                  ) : !ctv.phone &&
+                                    !ctv.id_number &&
+                                    !ctv.address &&
+                                    !ctv.bank_account_name &&
+                                    !ctv.bank_name &&
+                                    !ctv.bank_account_number ? (
+                                    <span className="text-red-500">
+                                      Chưa điền thông tin
+                                    </span>
+                                  ) : (
+                                    <span className="text-orange-500">
+                                      Thiếu thông tin
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
-                            {ctv.affiliate_code}
-                          </td>
-                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
-                            {ctv.total_recordings}
+                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                            <div className="flex flex-col items-start space-y-1">
+                              <span className="text-xs md:text-sm text-gray-900 font-medium">
+                                {ctv.total_recordings}
+                              </span>
+                              <Link
+                                href={`/manage-ctv/${ctv.id}`}
+                                className="text-[#2DA6A2] bg-[#2DA6A2]/5 hover:bg-[#2DA6A2]/10 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm"
+                              >
+                                Xem
+                              </Link>
+                            </div>
                           </td>
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                             {(ctv.total_duration / 60).toFixed(1)} phút
@@ -417,44 +477,25 @@ export default function ManageCTVPage() {
                               currency: "VND",
                               minimumFractionDigits: 0,
                               maximumFractionDigits: 0,
-                            }).format(((ctv.total_duration || 0) / 60 / 20) * 100000)}
+                            }).format(
+                              ((ctv.total_duration || 0) / 60 / 20) * 100000
+                            )}
                           </td>
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
-                            <span
-                              className={`px-1.5 md:px-2 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${
-                                ctv.status === "active"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {ctv.status === "active"
-                                ? "Hoạt động"
-                                : "Không hoạt động"}
-                            </span>
-                          </td>
-                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                             {new Date(ctv.created_at).toLocaleDateString(
                               "vi-VN"
                             )}
                           </td>
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm font-medium">
-                            <div className="flex items-center space-x-2">
-                              <Link
-                                href={`/manage-ctv/${ctv.id}`}
-                                className="text-[#2DA6A2] hover:text-[#2DA6A2]/80 hover:bg-[#2DA6A2]/10 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm"
-                              >
-                                Xem
-                              </Link>
-                              <button
-                                onClick={() => {
-                                  setSelectedCTV(ctv);
-                                  setIsDeleteModalOpen(true);
-                                }}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm"
-                              >
-                                Xóa
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => {
+                                setSelectedCTV(ctv);
+                                setIsDeleteModalOpen(true);
+                              }}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm"
+                            >
+                              Xóa
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -693,9 +734,15 @@ export default function ManageCTVPage() {
       {isDeleteModalOpen && selectedCTV && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 relative">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Xác nhận xóa CTV</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              Xác nhận xóa CTV
+            </h3>
             <p className="text-gray-600 mb-6">
-              Bạn có chắc chắn muốn xóa CTV <span className="font-medium text-gray-900">{selectedCTV.full_name}</span>? Hành động này không thể hoàn tác.
+              Bạn có chắc chắn muốn xóa CTV{" "}
+              <span className="font-medium text-gray-900">
+                {selectedCTV.full_name}
+              </span>
+              ? Hành động này không thể hoàn tác.
             </p>
 
             <div className="flex justify-end space-x-3">
@@ -712,12 +759,16 @@ export default function ManageCTVPage() {
                 onClick={async () => {
                   try {
                     setIsDeleting(true);
-                    const { error } = await supabaseAdmin.auth.admin.deleteUser(selectedCTV.id);
+                    const { error } = await supabaseAdmin.auth.admin.deleteUser(
+                      selectedCTV.id
+                    );
                     if (error) throw error;
 
                     // Update local state
-                    setCtvList(prev => prev.filter(ctv => ctv.id !== selectedCTV.id));
-                    
+                    setCtvList((prev) =>
+                      prev.filter((ctv) => ctv.id !== selectedCTV.id)
+                    );
+
                     // Close modal
                     setIsDeleteModalOpen(false);
                     setSelectedCTV(null);
