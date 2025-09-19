@@ -47,6 +47,8 @@ export default function ManageCTVPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedUserDetail, setSelectedUserDetail] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({});
 
   const [ctvList, setCtvList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -415,7 +417,13 @@ export default function ManageCTVPage() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {filteredCTV.map((ctv) => (
                         <tr key={ctv.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td 
+                            className="px-6 py-4 whitespace-nowrap cursor-pointer hover:bg-gray-50 group"
+                            onClick={() => {
+                              setSelectedUserDetail(ctv);
+                              setIsDetailModalOpen(true);
+                            }}
+                          >
                             <div className="flex items-center">
                               <div
                                 className={`w-8 h-8 overflow-hidden md:w-10 md:h-10 bg-[#2DA6A2] rounded-full flex items-center justify-center border-2 ${
@@ -444,15 +452,9 @@ export default function ManageCTVPage() {
                                 </span>
                               </div>
                               <div className="ml-4">
-                                <button
-                                  onClick={() => {
-                                    setSelectedUserDetail(ctv);
-                                    setIsDetailModalOpen(true);
-                                  }}
-                                  className="text-xs md:text-sm font-medium text-gray-900 hover:text-[#2DA6A2] transition-colors text-left"
-                                >
+                                <div className="text-xs md:text-sm font-medium text-gray-900 group-hover:text-[#2DA6A2] transition-colors text-left">
                                   {ctv.full_name || "Chưa cập nhật"}
-                                </button>
+                                </div>
                                 <div className="text-[10px] md:text-xs mt-0.5">
                                   {ctv.phone &&
                                   ctv.id_number &&
@@ -518,7 +520,7 @@ export default function ManageCTVPage() {
                                 setSelectedCTV(ctv);
                                 setIsDeleteModalOpen(true);
                               }}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm"
+                              className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm"
                             >
                               Xóa
                             </button>
@@ -824,21 +826,51 @@ export default function ManageCTVPage() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Số điện thoại</p>
-                    <p className={`text-sm ${selectedUserDetail.phone ? "text-gray-900" : "text-red-500"}`}>
-                      {selectedUserDetail.phone || "Chưa cập nhật"}
-                    </p>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editData.phone}
+                        onChange={(e) => setEditData(prev => ({ ...prev, phone: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900"
+                        placeholder="Nhập số điện thoại"
+                      />
+                    ) : (
+                      <p className={`text-sm ${selectedUserDetail.phone ? "text-gray-900" : "text-red-500"}`}>
+                        {selectedUserDetail.phone || "Chưa cập nhật"}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Số CCCD</p>
-                    <p className={`text-sm ${selectedUserDetail.id_number ? "text-gray-900" : "text-red-500"}`}>
-                      {selectedUserDetail.id_number || "Chưa cập nhật"}
-                    </p>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editData.id_number}
+                        onChange={(e) => setEditData(prev => ({ ...prev, id_number: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900"
+                        placeholder="Nhập số CCCD"
+                      />
+                    ) : (
+                      <p className={`text-sm ${selectedUserDetail.id_number ? "text-gray-900" : "text-red-500"}`}>
+                        {selectedUserDetail.id_number || "Chưa cập nhật"}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Địa chỉ</p>
-                    <p className={`text-sm ${selectedUserDetail.address ? "text-gray-900" : "text-red-500"}`}>
-                      {selectedUserDetail.address || "Chưa cập nhật"}
-                    </p>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editData.address}
+                        onChange={(e) => setEditData(prev => ({ ...prev, address: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900"
+                        placeholder="Nhập địa chỉ"
+                      />
+                    ) : (
+                      <p className={`text-sm ${selectedUserDetail.address ? "text-gray-900" : "text-red-500"}`}>
+                        {selectedUserDetail.address || "Chưa cập nhật"}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -849,21 +881,51 @@ export default function ManageCTVPage() {
                 <div className="space-y-3">
                   <div>
                     <p className="text-xs text-gray-500">Tên chủ tài khoản</p>
-                    <p className={`text-sm ${selectedUserDetail.bank_account_name ? "text-gray-900" : "text-red-500"}`}>
-                      {selectedUserDetail.bank_account_name || "Chưa cập nhật"}
-                    </p>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editData.bank_account_name}
+                        onChange={(e) => setEditData(prev => ({ ...prev, bank_account_name: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900"
+                        placeholder="Nhập tên chủ tài khoản"
+                      />
+                    ) : (
+                      <p className={`text-sm ${selectedUserDetail.bank_account_name ? "text-gray-900" : "text-red-500"}`}>
+                        {selectedUserDetail.bank_account_name || "Chưa cập nhật"}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Tên ngân hàng</p>
-                    <p className={`text-sm ${selectedUserDetail.bank_name ? "text-gray-900" : "text-red-500"}`}>
-                      {selectedUserDetail.bank_name || "Chưa cập nhật"}
-                    </p>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editData.bank_name}
+                        onChange={(e) => setEditData(prev => ({ ...prev, bank_name: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900"
+                        placeholder="Nhập tên ngân hàng"
+                      />
+                    ) : (
+                      <p className={`text-sm ${selectedUserDetail.bank_name ? "text-gray-900" : "text-red-500"}`}>
+                        {selectedUserDetail.bank_name || "Chưa cập nhật"}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Số tài khoản</p>
-                    <p className={`text-sm ${selectedUserDetail.bank_account_number ? "text-gray-900" : "text-red-500"}`}>
-                      {selectedUserDetail.bank_account_number || "Chưa cập nhật"}
-                    </p>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editData.bank_account_number}
+                        onChange={(e) => setEditData(prev => ({ ...prev, bank_account_number: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900"
+                        placeholder="Nhập số tài khoản"
+                      />
+                    ) : (
+                      <p className={`text-sm ${selectedUserDetail.bank_account_number ? "text-gray-900" : "text-red-500"}`}>
+                        {selectedUserDetail.bank_account_number || "Chưa cập nhật"}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -912,6 +974,94 @@ export default function ManageCTVPage() {
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="md:col-span-2 pt-6 flex justify-end space-x-3 hidden">
+                {isEditing ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        setIsEditing(false);
+                        setEditData({});
+                      }}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const { error } = await supabase
+                            .from("profiles")
+                            .update({
+                              phone: editData.phone,
+                              id_number: editData.id_number,
+                              address: editData.address,
+                              bank_account_name: editData.bank_account_name,
+                              bank_name: editData.bank_name,
+                              bank_account_number: editData.bank_account_number,
+                            })
+                            .eq("id", selectedUserDetail.id);
+
+                          if (error) throw error;
+
+                          // Update local state
+                          setSelectedUserDetail(prev => ({
+                            ...prev,
+                            ...editData
+                          }));
+                          setCtvList(prev => 
+                            prev.map(ctv => 
+                              ctv.id === selectedUserDetail.id 
+                                ? { ...ctv, ...editData }
+                                : ctv
+                            )
+                          );
+                          setIsEditing(false);
+                          alert("Cập nhật thông tin thành công!");
+                        } catch (error) {
+                          console.error("Error updating profile:", error);
+                          alert("Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại.");
+                        }
+                      }}
+                      className="px-4 py-2 bg-[#2DA6A2] text-white rounded-lg hover:bg-[#2DA6A2]/90 transition-colors text-sm"
+                    >
+                      Lưu thay đổi
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setEditData({
+                        phone: selectedUserDetail.phone || "",
+                        id_number: selectedUserDetail.id_number || "",
+                        address: selectedUserDetail.address || "",
+                        bank_account_name: selectedUserDetail.bank_account_name || "",
+                        bank_name: selectedUserDetail.bank_name || "",
+                        bank_account_number: selectedUserDetail.bank_account_number || "",
+                      });
+                      setIsEditing(true);
+                    }}
+                    className="inline-flex items-center text-[#2DA6A2] hover:text-white bg-[#2DA6A2]/5 hover:bg-[#2DA6A2] px-4 py-2 rounded-lg transition-colors text-sm"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-4 h-4 mr-2"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
+                      />
+                    </svg>
+                    Chỉnh sửa
+                  </button>
+                )}
               </div>
             </div>
           </div>
