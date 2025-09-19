@@ -95,8 +95,8 @@ const RecordPage = () => {
     // Reset hasPlayedAudio khi chuyển câu
     setHasPlayedAudio(false);
 
-    // Tự động phát audio nếu có và chưa phát lần nào
-    if (questions[currentQuestionIndex]?.audio_url && !hasPlayedAudio) {
+    // Tự động phát audio nếu có
+    if (questions[currentQuestionIndex]?.audio_url) {
       const audio = new Audio(`${questions[currentQuestionIndex].audio_url}?t=${Date.now()}`);
       audio.play()
         .then(() => {
@@ -106,7 +106,7 @@ const RecordPage = () => {
           console.error("Error playing question audio:", error);
         });
     }
-  }, [currentQuestionIndex, questions]);
+  }, [currentQuestionIndex]);
 
   // Effect để kiểm tra và retry khi asrResult thay đổi
   useEffect(() => {
@@ -124,7 +124,7 @@ const RecordPage = () => {
               setTimeout(() => {
                 setRetryCount(prev => prev + 1);
                 setAsrResult(prev => ({ ...prev, audio_url: `${prev.audio_url.split('?')[0]}?t=${Date.now()}` }));
-              }, 400);
+              }, 300);
             } else {
               setIsLoadingAudio(false);
             }
@@ -135,7 +135,7 @@ const RecordPage = () => {
             setTimeout(() => {
               setRetryCount(prev => prev + 1);
               setAsrResult(prev => ({ ...prev, audio_url: `${prev.audio_url.split('?')[0]}?t=${Date.now()}` }));
-            }, 400);
+            }, 300);
           } else {
             setIsLoadingAudio(false);
           }
@@ -199,7 +199,7 @@ const RecordPage = () => {
               setTimeout(() => {
                 setRetryCount(prev => prev + 1);
                 setAsrResult({ ...result, audio_url: `${result.audio_url}?t=${Date.now()}` });
-              }, 400);
+              }, 300);
             } else {
               console.error("Failed to load audio after maximum retries");
               alert("Không thể tải audio sau nhiều lần thử. Vui lòng thử lại.");
@@ -211,7 +211,7 @@ const RecordPage = () => {
             setTimeout(() => {
               setRetryCount(prev => prev + 1);
               setAsrResult({ ...result, audio_url: `${result.audio_url}?t=${Date.now()}` });
-            }, 400);
+            }, 300);
           } else {
             console.error("Failed to load audio after maximum retries");
             alert("Không thể tải audio sau nhiều lần thử. Vui lòng thử lại.");
@@ -384,7 +384,7 @@ const RecordPage = () => {
           )}
 
           {/* ASR Result - Above Mic */}
-          {(isProcessing || isLoadingAudio) && (
+          {(isProcessing) && (
             <div className="mb-6 text-center">
               <div className="inline-flex items-center space-x-2 text-[#2DA6A2]">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#2DA6A2]"></div>
