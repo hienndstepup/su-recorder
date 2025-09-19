@@ -41,6 +41,9 @@ export default function ManageCTVPage() {
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedCTV, setSelectedCTV] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [ctvList, setCtvList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -435,12 +438,23 @@ export default function ManageCTVPage() {
                             )}
                           </td>
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm font-medium">
-                            <Link
-                              href={`/manage-ctv/${ctv.id}`}
-                              className="text-[#2DA6A2] hover:text-[#2DA6A2]/80 hover:bg-[#2DA6A2]/10 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm"
-                            >
-                              Xem
-                            </Link>
+                            <div className="flex items-center space-x-2">
+                              <Link
+                                href={`/manage-ctv/${ctv.id}`}
+                                className="text-[#2DA6A2] hover:text-[#2DA6A2]/80 hover:bg-[#2DA6A2]/10 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm"
+                              >
+                                Xem
+                              </Link>
+                              <button
+                                onClick={() => {
+                                  setSelectedCTV(ctv);
+                                  setIsDeleteModalOpen(true);
+                                }}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm"
+                              >
+                                Xóa
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -671,6 +685,63 @@ export default function ManageCTVPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && selectedCTV && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 relative">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Xác nhận xóa CTV</h3>
+            <p className="text-gray-600 mb-6">
+              Bạn có chắc chắn muốn xóa CTV <span className="font-medium text-gray-900">{selectedCTV.full_name}</span>? Hành động này không thể hoàn tác.
+            </p>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setSelectedCTV(null);
+                }}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    setIsDeleting(true);
+                    const { error } = await supabaseAdmin.auth.admin.deleteUser(selectedCTV.id);
+                    if (error) throw error;
+
+                    // Update local state
+                    setCtvList(prev => prev.filter(ctv => ctv.id !== selectedCTV.id));
+                    
+                    // Close modal
+                    setIsDeleteModalOpen(false);
+                    setSelectedCTV(null);
+                    alert("Xóa CTV thành công!");
+                  } catch (error) {
+                    console.error("Error deleting CTV:", error);
+                    alert("Có lỗi xảy ra khi xóa CTV. Vui lòng thử lại.");
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm disabled:bg-red-300 disabled:cursor-not-allowed flex items-center"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Đang xử lý...
+                  </>
+                ) : (
+                  "Xóa"
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
