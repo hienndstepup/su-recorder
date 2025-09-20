@@ -1,12 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 export default function Header() {
   const { user, signOut } = useAuth();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (!error && data) {
+          setProfileData(data);
+        }
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isDropdownOpen) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -91,12 +126,24 @@ export default function Header() {
             >
               Cá nhân
             </Link>
+            {profileData?.role === "admin" && (
+              <Link
+                href="/manage-questions"
+                className={getNavClasses("/manage-questions")}
+              >
+                QL câu hỏi
+              </Link>
+            )}
           </div>
 
           {/* User Info & Actions */}
           <div className="flex items-center space-x-4">
-            <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
-              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-[#2DA6A2] rounded-full flex items-center justify-center" title={user?.user_metadata?.full_name || user?.email}>
+            <div className="hidden md:flex items-center relative">
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="w-8 h-8 lg:w-10 lg:h-10 bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 rounded-full flex items-center justify-center transition-colors cursor-pointer"
+                title={user?.user_metadata?.full_name || user?.email}
+              >
                 <span className="text-white text-xs md:text-xs lg:text-base font-medium">
                   {(user?.user_metadata?.full_name || user?.email || "")
                     .split(" ")
@@ -105,17 +152,35 @@ export default function Header() {
                     .toUpperCase()
                     .slice(0, 2)}
                 </span>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  signOut();
-                }}
-                className="text-red-600 hover:text-red-800 hover:bg-red-50 px-2 lg:px-4 py-1.5 lg:py-2.5 rounded-md text-xs md:text-xs lg:text-base font-semibold transition-colors"
-              >
-                Đăng xuất
               </button>
+
+              {/* Desktop Dropdown */}
+              {isDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-60 bg-white rounded-lg shadow-lg py-1 border border-gray-200">
+                  <div className="px-4 py-3 border-b border-gray-200">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {user?.user_metadata?.full_name || "Chưa cập nhật"}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate mt-0.5">
+                      {user?.email}
+                    </p>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      signOut();
+                      setIsDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center cursor-pointer"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                    </svg>
+                    Đăng xuất
+                  </button>
+                </div>
+              )}
             </div>
             
             {/* Mobile menu button */}
@@ -175,6 +240,15 @@ export default function Header() {
                   >
                     Cá nhân
                   </Link>
+                  {profileData?.role === "admin" && (
+                    <Link
+                      href="/manage-questions"
+                      className={getMobileNavClasses("/manage-questions")}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      QL câu hỏi
+                    </Link>
+                  )}
                   <div className="border-t border-gray-200 pt-2 mt-2">
                     <div className="px-3 py-2 text-xs md:text-sm text-gray-500">
                       Xin chào, {user?.user_metadata?.full_name || user?.email}
