@@ -34,3 +34,13 @@ export const getDeviceId = () => {
 
   return deviceId;
 };
+
+// Hàm chuyển đổi text thành dạng không dấu và chữ thường để tìm kiếm
+export const normalizeText = (text) => {
+  if (!text) return "";
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d");
+};

@@ -6,6 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { normalizeText } from "@/lib";
 
 export default function ManageCTVPage() {
   const { user } = useAuth();
@@ -84,9 +85,12 @@ export default function ManageCTVPage() {
 
   // Filter and sort CTV list
   const filteredCTV = ctvList
-    .filter((ctv) =>
-      ctv.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter((ctv) => {
+      if (!ctv.full_name || !searchTerm) return true;
+      const normalizedName = normalizeText(ctv.full_name);
+      const normalizedSearch = normalizeText(searchTerm);
+      return normalizedName.includes(normalizedSearch);
+    })
     .sort((a, b) => {
       if (sortBy === "most") {
         return (b.total_recordings || 0) - (a.total_recordings || 0);
@@ -95,19 +99,6 @@ export default function ManageCTVPage() {
       }
       return 0; // "all" - giữ nguyên thứ tự
     });
-
-  const handleCopyLink = async (link, ctvId) => {
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopiedLinkId(ctvId);
-      // Reset tooltip after 2 seconds
-      setTimeout(() => {
-        setCopiedLinkId(null);
-      }, 2000);
-    } catch (error) {
-      console.error("Failed to copy link:", error);
-    }
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -1023,7 +1014,7 @@ export default function ManageCTVPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="md:col-span-2 pt-6 flex justify-end space-x-3 hidden">
+              <div className="md:col-span-2 pt-6 flex justify-end space-x-3">
                 {isEditing ? (
                   <>
                     <button
