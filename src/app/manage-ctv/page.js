@@ -398,6 +398,9 @@ export default function ManageCTVPage() {
                           Họ và tên
                         </th>
                         <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                          PASS
+                        </th>
+                        <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                           Số bài ghi âm
                         </th>
                         <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
@@ -481,6 +484,49 @@ export default function ManageCTVPage() {
                                   )}
                                 </div>
                               </div>
+                            </div>
+                          </td>
+                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    console.log('Updating is_pass for user:', ctv.id, 'to:', !ctv.is_pass);
+                                    const { data, error } = await supabase
+                                      .from("profiles")
+                                      .update({ is_pass: !ctv.is_pass })
+                                      .eq("id", ctv.id)
+                                      .select();
+
+                                    console.log('Update response:', { data, error });
+                                    if (error) throw error;
+
+                                    // Update local state
+                                    setCtvList(prev =>
+                                      prev.map(item =>
+                                        item.id === ctv.id
+                                          ? { ...item, is_pass: !item.is_pass }
+                                          : item
+                                      )
+                                    );
+                                  } catch (error) {
+                                    console.error("Error updating pass status:", error);
+                                    alert("Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại.");
+                                  }
+                                }}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#2DA6A2] focus:ring-offset-2 ${
+                                  ctv.is_pass ? "bg-[#2DA6A2]" : "bg-gray-200"
+                                }`}
+                                role="switch"
+                                aria-checked={ctv.is_pass}
+                              >
+                                <span
+                                  aria-hidden="true"
+                                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                    ctv.is_pass ? "translate-x-5" : "translate-x-0"
+                                  }`}
+                                />
+                              </button>
                             </div>
                           </td>
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap">

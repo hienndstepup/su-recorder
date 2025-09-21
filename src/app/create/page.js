@@ -36,6 +36,7 @@ const CreatePage = () => {
     success: 0,
     failed: 0,
   });
+  const [failedUsers, setFailedUsers] = useState([]);
 
   // Lấy thông tin profile của user hiện tại (bao gồm affiliate_code)
   useEffect(() => {
@@ -70,6 +71,7 @@ const CreatePage = () => {
 
     setIsCreating(true);
     setCreationResults({ total: emails.length, success: 0, failed: 0 });
+    setFailedUsers([]);
 
     const nameList = names.split("\n").filter(name => name.trim());
     
@@ -102,6 +104,7 @@ const CreatePage = () => {
           ...prev,
           failed: prev.failed + 1
         }));
+        setFailedUsers(prev => [...prev, { email, name, error: error.message }]);
       }
     }
 
@@ -244,6 +247,24 @@ const CreatePage = () => {
                   </div>
                 )}
               </div>
+
+              {/* Failed Users List */}
+              {failedUsers.length > 0 && (
+                <div className="mt-4 p-4 bg-red-50 rounded-lg">
+                  <h3 className="text-sm font-medium text-red-800 mb-2">
+                    Danh sách tài khoản tạo thất bại ({failedUsers.length}):
+                  </h3>
+                  <div className="space-y-2">
+                    {failedUsers.map((user, index) => (
+                      <div key={index} className="text-sm">
+                        <p className="text-gray-900 font-medium">{user.name}</p>
+                        <p className="text-gray-600">{user.email}</p>
+                        <p className="text-red-600 text-xs">{user.error}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
