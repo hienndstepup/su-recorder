@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
@@ -10,7 +11,37 @@ import { normalizeText } from "@/lib";
 
 export default function ManageCTVPage() {
   const { user } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
+
+  // Lấy giá trị từ URL params hoặc dùng giá trị mặc định
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
+  const [sortBy, setSortBy] = useState(searchParams.get("sort") || "all"); // "all", "most", "least"
+
+  // Hàm cập nhật URL params
+  const updateUrlParams = (params) => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    
+    // Cập nhật hoặc xóa params
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        newSearchParams.set(key, value);
+      } else {
+        newSearchParams.delete(key);
+      }
+    });
+
+    // Cập nhật URL
+    router.push(`?${newSearchParams.toString()}`, { scroll: false });
+  };
+
+  // Hàm xóa tất cả bộ lọc
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setSortBy("all");
+    router.push("", { scroll: false }); // Xóa tất cả params
+  };
 
   // Lấy thông tin profile của user hiện tại (bao gồm affiliate_code)
   useEffect(() => {
@@ -30,8 +61,6 @@ export default function ManageCTVPage() {
 
     fetchCurrentUserProfile();
   }, [user]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("all"); // "all", "most", "least"
   const [copiedLinkId, setCopiedLinkId] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newCTV, setNewCTV] = useState({
@@ -240,9 +269,9 @@ export default function ManageCTVPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center space-y-3 md:space-y-0 mb-4">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-start space-y-4 md:space-y-0 mb-4">
               {/* Search and Sort */}
-              <div className="flex flex-col md:flex-row md:items-end space-y-3 md:space-y-0 md:space-x-4">
+              <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:items-end md:space-x-4">
                 {/* Search Input */}
                 <div className="flex flex-col space-y-1">
                   <label className="text-xs text-gray-600 font-medium">
@@ -252,7 +281,11 @@ export default function ManageCTVPage() {
                     <input
                       type="text"
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setSearchTerm(value);
+                        updateUrlParams({ search: value || null });
+                      }}
                       placeholder="Tìm kiếm theo tên..."
                       className="text-gray-700 pl-10 pr-4 h-9 md:h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm md:text-base w-full md:w-60"
                     />
@@ -280,7 +313,11 @@ export default function ManageCTVPage() {
                   </label>
                   <select
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSortBy(value);
+                      updateUrlParams({ sort: value === "all" ? null : value });
+                    }}
                     className="text-gray-700 px-3 md:px-4 h-9 md:h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm md:text-base bg-white w-full md:w-auto md:min-w-[120px]"
                   >
                     <option value="all">Tất cả</option>
@@ -288,6 +325,29 @@ export default function ManageCTVPage() {
                     <option value="least">Ít nhất</option>
                   </select>
                 </div>
+
+                {/* Clear Filters Button - Only show if there are active filters */}
+                {(searchTerm || sortBy !== "all") && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="inline-flex items-center px-3 py-1.5 md:px-4 md:py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm md:text-base rounded-lg transition-colors mt-4 md:mt-0"
+                  >
+                    <svg 
+                      className="w-4 h-4 mr-1.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                    Xóa bộ lọc
+                  </button>
+                )}
               </div>
 
               <button
