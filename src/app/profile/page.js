@@ -25,6 +25,9 @@ export default function ProfilePage() {
     confirmPassword: false
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadingFront, setUploadingFront] = useState(false);
+  const [uploadingBack, setUploadingBack] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState(null);
   
   const checkRequiredFields = (data) => {
     return !!(
@@ -89,6 +92,8 @@ export default function ProfilePage() {
       bank_account_name: profileData.bank_account_name || "",
       bank_name: profileData.bank_name || "",
       bank_account_number: profileData.bank_account_number || "",
+      front_cccd: profileData.front_cccd || "",
+      back_cccd: profileData.back_cccd || "",
     });
     setIsEditing(true);
   };
@@ -96,17 +101,18 @@ export default function ProfilePage() {
   const handleSave = async () => {
     try {
       const { error } = await supabase
-        .from("profiles")
-        .update({
-          full_name: editData.full_name,
-          phone: editData.phone,
-          id_number: editData.id_number,
-          address: editData.address,
-          bank_account_name: editData.bank_account_name,
-          bank_name: editData.bank_name,
-          bank_account_number: editData.bank_account_number,
-        })
-        .eq("id", user.id);
+        .rpc('update_profile_info', {
+          profile_id: user.id,
+          new_full_name: editData.full_name,
+          new_phone: editData.phone,
+          new_id_number: editData.id_number,
+          new_address: editData.address,
+          new_bank_account_name: editData.bank_account_name,
+          new_bank_name: editData.bank_name,
+          new_bank_account_number: editData.bank_account_number,
+          new_front_cccd: editData.front_cccd,
+          new_back_cccd: editData.back_cccd,
+        });
 
       if (error) throw error;
 
@@ -360,6 +366,213 @@ export default function ProfilePage() {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-base md:text-sm text-gray-900"
                               />
                             </div>
+
+                            {/* CCCD Images */}
+                            <div>
+                              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
+                                Ảnh mặt trước CCCD
+                              </label>
+                              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-[#2DA6A2] transition-colors">
+                                <div className="space-y-1 text-center">
+                                  {editData.front_cccd ? (
+                                    <div className="relative">
+                                      <img
+                                        src={editData.front_cccd}
+                                        alt="Mặt trước CCCD"
+                                        className="max-h-32 mx-auto cursor-pointer hover:opacity-80 transition-opacity"
+                                        onClick={() => setLightboxImage(editData.front_cccd)}
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditData(prev => ({ ...prev, front_cccd: "" }))}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                      </svg>
+                                      <div className="flex text-sm text-gray-600">
+                                        <label className="relative cursor-pointer rounded-md font-medium text-[#2DA6A2] hover:text-[#2DA6A2]/90 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-[#2DA6A2]">
+                                          <span>Tải ảnh lên</span>
+                                          <input
+                                            type="file"
+                                            className="sr-only"
+                                            accept="image/*"
+                                            onChange={async (e) => {
+                                              const file = e.target.files?.[0];
+                                              if (file) {
+                                                setUploadingFront(true);
+                                                try {
+                                                  const formData = new FormData();
+                                                  formData.append('files', file);
+                                                  formData.append('fileTypes', file.type);
+                                                  formData.append('objectKey', 'web_mvp/sub_recordings/thumb');
+
+                                                  const response = await fetch('https://mvp-api.hacknao.edu.vn/api/v1/upload', {
+                                                    method: 'POST',
+                                                    body: formData,
+                                                    headers: {
+                                                      'accept': 'application/json, text/plain, */*',
+                                                      'accept-language': 'en-US,en;q=0.9,vi;q=0.8',
+                                                      'authorization': 'Bearer undefined',
+                                                      'origin': 'https://mvp.hacknao.edu.vn',
+                                                      'priority': 'u=1, i',
+                                                      'referer': 'https://mvp.hacknao.edu.vn/',
+                                                      'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
+                                                      'sec-ch-ua-mobile': '?0',
+                                                      'sec-ch-ua-platform': '"macOS"',
+                                                      'sec-fetch-dest': 'empty',
+                                                      'sec-fetch-mode': 'cors',
+                                                      'sec-fetch-site': 'same-site',
+                                                      'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+                                                    },
+                                                  });
+
+                                                  if (!response.ok) {
+                                                    throw new Error('Upload failed');
+                                                  }
+
+                                                  const { urls } = await response.json();
+                                                  if (urls && urls.length > 0) {
+                                                    setEditData(prev => ({
+                                                      ...prev,
+                                                      front_cccd: urls[0]
+                                                    }));
+                                                  } else {
+                                                    throw new Error('No URL returned from server');
+                                                  }
+                                                } catch (error) {
+                                                  console.error('Error uploading image:', error);
+                                                  alert('Lỗi khi tải ảnh lên. Vui lòng thử lại.');
+                                                } finally {
+                                                  setUploadingFront(false);
+                                                }
+                                              }
+                                            }}
+                                          />
+                                        </label>
+                                      </div>
+                                      <p className="text-xs text-gray-500">PNG, JPG, GIF tối đa 10MB</p>
+                                      {uploadingFront && (
+                                        <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
+                                          <div className="w-4 h-4 border-2 border-[#2DA6A2] border-t-transparent rounded-full animate-spin"></div>
+                                          <span>Đang tải lên...</span>
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
+                                Ảnh mặt sau CCCD
+                              </label>
+                              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-[#2DA6A2] transition-colors">
+                                <div className="space-y-1 text-center">
+                                  {editData.back_cccd ? (
+                                    <div className="relative">
+                                      <img
+                                        src={editData.back_cccd}
+                                        alt="Mặt sau CCCD"
+                                        className="max-h-32 mx-auto cursor-pointer hover:opacity-80 transition-opacity"
+                                        onClick={() => setLightboxImage(editData.back_cccd)}
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditData(prev => ({ ...prev, back_cccd: "" }))}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                      </svg>
+                                      <div className="flex text-sm text-gray-600">
+                                        <label className="relative cursor-pointer rounded-md font-medium text-[#2DA6A2] hover:text-[#2DA6A2]/90 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-[#2DA6A2]">
+                                          <span>Tải ảnh lên</span>
+                                          <input
+                                            type="file"
+                                            className="sr-only"
+                                            accept="image/*"
+                                            onChange={async (e) => {
+                                              const file = e.target.files?.[0];
+                                              if (file) {
+                                                setUploadingBack(true);
+                                                try {
+                                                  const formData = new FormData();
+                                                  formData.append('files', file);
+                                                  formData.append('fileTypes', file.type);
+                                                  formData.append('objectKey', 'web_mvp/sub_recordings/thumb');
+
+                                                  const response = await fetch('https://mvp-api.hacknao.edu.vn/api/v1/upload', {
+                                                    method: 'POST',
+                                                    body: formData,
+                                                    headers: {
+                                                      'accept': 'application/json, text/plain, */*',
+                                                      'accept-language': 'en-US,en;q=0.9,vi;q=0.8',
+                                                      'authorization': 'Bearer undefined',
+                                                      'origin': 'https://mvp.hacknao.edu.vn',
+                                                      'priority': 'u=1, i',
+                                                      'referer': 'https://mvp.hacknao.edu.vn/',
+                                                      'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
+                                                      'sec-ch-ua-mobile': '?0',
+                                                      'sec-ch-ua-platform': '"macOS"',
+                                                      'sec-fetch-dest': 'empty',
+                                                      'sec-fetch-mode': 'cors',
+                                                      'sec-fetch-site': 'same-site',
+                                                      'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+                                                    },
+                                                  });
+
+                                                  if (!response.ok) {
+                                                    throw new Error('Upload failed');
+                                                  }
+
+                                                  const { urls } = await response.json();
+                                                  if (urls && urls.length > 0) {
+                                                    setEditData(prev => ({
+                                                      ...prev,
+                                                      back_cccd: urls[0]
+                                                    }));
+                                                  } else {
+                                                    throw new Error('No URL returned from server');
+                                                  }
+                                                } catch (error) {
+                                                  console.error('Error uploading image:', error);
+                                                  alert('Lỗi khi tải ảnh lên. Vui lòng thử lại.');
+                                                } finally {
+                                                  setUploadingBack(false);
+                                                }
+                                              }
+                                            }}
+                                          />
+                                        </label>
+                                      </div>
+                                      <p className="text-xs text-gray-500">PNG, JPG, GIF tối đa 10MB</p>
+                                      {uploadingBack && (
+                                        <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
+                                          <div className="w-4 h-4 border-2 border-[#2DA6A2] border-t-transparent rounded-full animate-spin"></div>
+                                          <span>Đang tải lên...</span>
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
                           </div>
 
                           {/* Thông tin liên hệ */}
@@ -485,6 +698,43 @@ export default function ProfilePage() {
                                   <span className="text-red-500">Chưa cập nhật</span>
                                 )}
                               </p>
+                            </div>
+
+                            {/* CCCD Images */}
+                            <div>
+                              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
+                                Ảnh mặt trước CCCD
+                              </label>
+                              {profileData.front_cccd ? (
+                                <img
+                                  src={profileData.front_cccd}
+                                  alt="Mặt trước CCCD"
+                                  className="max-h-32 rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => setLightboxImage(profileData.front_cccd)}
+                                />
+                              ) : (
+                                <p className="text-sm text-red-500 py-1.5 md:py-2">
+                                  Chưa cập nhật
+                                </p>
+                              )}
+                            </div>
+
+                            <div>
+                              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2">
+                                Ảnh mặt sau CCCD
+                              </label>
+                              {profileData.back_cccd ? (
+                                <img
+                                  src={profileData.back_cccd}
+                                  alt="Mặt sau CCCD"
+                                  className="max-h-32 rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => setLightboxImage(profileData.back_cccd)}
+                                />
+                              ) : (
+                                <p className="text-sm text-red-500 py-1.5 md:py-2">
+                                  Chưa cập nhật
+                                </p>
+                              )}
                             </div>
                           </div>
 
@@ -774,6 +1024,31 @@ export default function ProfilePage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {lightboxImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[60]"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-full">
+            <img
+              src={lightboxImage}
+              alt="Ảnh CCCD"
+              className="max-w-full max-h-full object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setLightboxImage(null)}
+              className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
       )}
