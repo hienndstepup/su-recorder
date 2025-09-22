@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -9,7 +9,41 @@ import { supabase, supabaseAdmin } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { normalizeText } from "@/lib";
 
-export default function ManageCTVPage() {
+// Loading component
+function LoadingState() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
+      <Header />
+      <div className="flex-1 p-3 md:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-4 animate-pulse">
+            <div className="h-8 md:h-10 bg-gray-200 rounded w-1/3 mb-2"></div>
+            <div className="h-5 md:h-6 bg-gray-200 rounded w-1/2"></div>
+          </div>
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start space-y-4 md:space-y-0 mb-4">
+            <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:items-end md:space-x-4">
+              <div className="h-11 bg-gray-200 rounded w-full md:w-60"></div>
+              <div className="h-11 bg-gray-200 rounded w-full md:w-32"></div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-6 animate-pulse">
+            <div className="space-y-4">
+              <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-16 bg-gray-100 rounded"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main component
+function ManageCTVPageContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1232,5 +1266,14 @@ export default function ManageCTVPage() {
         </div>
       )}
     </ProtectedRoute>
+  );
+}
+
+// Export default component with Suspense
+export default function ManageCTVPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <ManageCTVPageContent />
+    </Suspense>
   );
 }
