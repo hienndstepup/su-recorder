@@ -5,14 +5,54 @@ import { useParams, useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ManageCTVDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const [ctv, setCtv] = useState(null);
   const [recordings, setRecordings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingRecordings, setLoadingRecordings] = useState(true);
+  const [currentUserProfile, setCurrentUserProfile] = useState(null);
+
+  // Fetch current user profile để kiểm tra role và referrals
+  useEffect(() => {
+    const fetchCurrentUserProfile = async () => {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (data && !error) {
+        setCurrentUserProfile(data);
+      }
+    };
+
+    fetchCurrentUserProfile();
+  }, [user]);
+
+  // Kiểm tra quyền update is_pass
+  const canUpdateIsPass = (recordUserId) => {
+    if (!currentUserProfile) return false;
+    
+    // Admin có thể update tất cả
+    if (currentUserProfile.role === 'admin' && currentUserProfile.status === 'active') {
+      return true;
+    }
+    
+    // CTV chỉ có thể update của referrals
+    if (currentUserProfile.role === 'ctv' && currentUserProfile.status === 'active') {
+      // Kiểm tra xem record có phải của referral không
+      return ctv?.referrer_id === currentUserProfile.id;
+    }
+
+    return false;
+  };
 
   // Fetch recordings của CTV
   const fetchRecordings = async (ctvId) => {
@@ -20,26 +60,27 @@ export default function ManageCTVDetailPage() {
       setLoadingRecordings(true);
       const { data, error } = await supabase
         .from("recordings")
-        .select(
+          .select(
+            `
+            id,
+            audio_url,
+            audio_duration,
+            audio_script,
+            recorded_at,
+            age,
+            is_pass,
+            questions (
+              id,
+              text,
+              type,
+              hint
+            ),
+            provinces (
+              id,
+              name,
+              code
+            )
           `
-          id,
-          audio_url,
-          audio_duration,
-          audio_script,
-          recorded_at,
-          age,
-          questions (
-            id,
-            text,
-            type,
-            hint
-          ),
-          provinces (
-            id,
-            name,
-            code
-          )
-        `
         )
         .eq("user_id", ctvId)
         .order("recorded_at", { ascending: false });
@@ -234,6 +275,9 @@ export default function ManageCTVDetailPage() {
                         Audio
                       </th>
                       <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        Duyệt
+                      </th>
+                      <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                         Age
                       </th>
                       <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
@@ -288,6 +332,57 @@ export default function ManageCTVDetailPage() {
                                 </audio>
                               </div>
                             </div>
+                          </td>
+                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              {canUpdateIsPass(record.user_id) ? (
+                                <button
+                                  onClick={async () => {
+                                  try {
+                                    const { error } = await supabase
+                                      .rpc('update_recording_is_pass', {
+                                        recording_id: record.id,
+                                        new_is_pass: !record.is_pass
+                                      });
+
+                                    if (error) throw error;
+
+                                    // Update local state
+                                    setRecordings(prev =>
+                                      prev.map(item =>
+                                        item.id === record.id
+                                          ? { ...item, is_pass: !item.is_pass }
+                                          : item
+                                      )
+                                    );
+                                  } catch (error) {
+                                    console.error("Error updating pass status:", error);
+                                    alert("Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại.");
+                                  }
+                                }}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#2DA6A2] focus:ring-offset-2 ${
+                                  record.is_pass ? "bg-[#2DA6A2]" : "bg-gray-200"
+                                }`}
+                                role="switch"
+                                aria-checked={record.is_pass}
+                              >
+                                <span
+                                  aria-hidden="true"
+                                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                    record.is_pass ? "translate-x-5" : "translate-x-0"
+                                  }`}
+                                />
+                              </button>
+                              ) : (
+                                <div className={`inline-flex items-center px-2 py-1 rounded text-xs ${
+                                  record.is_pass 
+                                    ? "bg-green-100 text-green-800" 
+                                    : "bg-gray-100 text-gray-800"
+                                }`}>
+                                  {record.is_pass ? "Đã duyệt" : "Chưa duyệt"}
+                                </div>
+                              )}
+                              </div>
                           </td>
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                             {record.age || "-"}
