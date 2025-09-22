@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 export default function Header() {
   const { user, signOut } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
   const [profileData, setProfileData] = useState(null);
 
   useEffect(() => {
@@ -35,13 +36,16 @@ export default function Header() {
       if (isDropdownOpen) {
         setIsDropdownOpen(false);
       }
+      if (isAdminDropdownOpen) {
+        setIsAdminDropdownOpen(false);
+      }
     };
 
     document.addEventListener('click', handleClickOutside);
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [isDropdownOpen]);
+  }, [isDropdownOpen, isAdminDropdownOpen]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -127,12 +131,52 @@ export default function Header() {
               Cá nhân
             </Link>
             {profileData?.role === "admin" && (
-              <Link
-                href="/manage-questions"
-                className={getNavClasses("/manage-questions")}
-              >
-                QL câu hỏi
-              </Link>
+              <div className="relative">
+                <button
+                  onClick={() => setIsAdminDropdownOpen(!isAdminDropdownOpen)}
+                  className={`${getNavClasses("/manage-questions")} flex items-center`}
+                >
+                  Admin
+                  <svg 
+                    className={`ml-1 w-4 h-4 transition-transform ${isAdminDropdownOpen ? 'rotate-180' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Admin Dropdown */}
+                {isAdminDropdownOpen && (
+                  <div 
+                    className="absolute left-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg py-1 border border-gray-200 z-50"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Link
+                      href="/manage-questions"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#2DA6A2] transition-colors"
+                      onClick={() => setIsAdminDropdownOpen(false)}
+                    >
+                      QL câu hỏi
+                    </Link>
+                    <Link
+                      href="/report-recordings"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#2DA6A2] transition-colors"
+                      onClick={() => setIsAdminDropdownOpen(false)}
+                    >
+                      QL thu âm
+                    </Link>
+                    <Link
+                      href="/manage-sessions"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#2DA6A2] transition-colors"
+                      onClick={() => setIsAdminDropdownOpen(false)}
+                    >
+                      QL phiên
+                    </Link>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
@@ -241,13 +285,32 @@ export default function Header() {
                     Cá nhân
                   </Link>
                   {profileData?.role === "admin" && (
-                    <Link
-                      href="/manage-questions"
-                      className={getMobileNavClasses("/manage-questions")}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      QL câu hỏi
-                    </Link>
+                    <div className="space-y-1">
+                      <div className="px-3 py-2 text-sm font-semibold text-gray-900">
+                        Admin
+                      </div>
+                      <Link
+                        href="/manage-questions"
+                        className={getMobileNavClasses("/manage-questions")}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        QL câu hỏi
+                      </Link>
+                      <Link
+                        href="/manage-recordings"
+                        className={getMobileNavClasses("/manage-recordings")}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        QL thu âm
+                      </Link>
+                      <Link
+                        href="/manage-sessions"
+                        className={getMobileNavClasses("/manage-sessions")}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        QL phiên
+                      </Link>
+                    </div>
                   )}
                   <div className="border-t border-gray-200 pt-2 mt-2">
                     <div className="px-3 py-2 text-xs md:text-sm text-gray-500">
