@@ -9,6 +9,93 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { getDeviceId } from "@/lib";
 
+// Animated Number Component
+const AnimatedNumber = ({ value, duration = 1000, decimals = 0 }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    if (value !== displayValue) {
+      setIsAnimating(true);
+      const startValue = displayValue;
+      const endValue = value;
+      const startTime = Date.now();
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function for smooth animation
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        const currentValue = startValue + (endValue - startValue) * easeOutQuart;
+        
+        setDisplayValue(currentValue);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          setIsAnimating(false);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    }
+  }, [value, duration, displayValue]);
+
+  return (
+    <span className={`transition-all duration-200 ${isAnimating ? 'scale-110 text-yellow-500' : 'scale-100'}`}>
+      {displayValue.toFixed(decimals)}
+    </span>
+  );
+};
+
+// Animated Currency Component
+const AnimatedCurrency = ({ value, duration = 1000 }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    if (value !== displayValue) {
+      setIsAnimating(true);
+      const startValue = displayValue;
+      const endValue = value;
+      const startTime = Date.now();
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function for smooth animation
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        const currentValue = startValue + (endValue - startValue) * easeOutQuart;
+        
+        setDisplayValue(currentValue);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          setIsAnimating(false);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    }
+  }, [value, duration, displayValue]);
+
+  const formattedValue = new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(displayValue);
+
+  return (
+    <span className={`transition-all duration-200 ${isAnimating ? 'scale-110 text-green-500' : 'scale-100'}`}>
+      {formattedValue}
+    </span>
+  );
+};
+
 const RecordPage = () => {
   const router = useRouter();
   const { user } = useAuth();
@@ -271,44 +358,50 @@ const RecordPage = () => {
 
         {/* Stats Cards */}
         <div className="flex flex-col md:grid md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow-md p-3 md:p-4">
+          <div className="bg-white rounded-lg shadow-md p-3 md:p-4 hover:shadow-lg transition-shadow duration-300">
             <div className="flex justify-between items-center md:block">
               <div className="text-gray-500 text-xs md:text-sm md:mb-1">
                 Đã ghi
               </div>
               <div className="text-lg md:text-2xl font-bold text-[#2DA6A2]">
-                {userStats.total_recordings || 0}
+                <AnimatedNumber 
+                  value={userStats.total_recordings || 0} 
+                  duration={1200}
+                  decimals={0}
+                />
                 <span className="text-xs md:text-sm font-normal text-gray-500 ml-1">
                   bài
                 </span>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-3 md:p-4">
+          <div className="bg-white rounded-lg shadow-md p-3 md:p-4 hover:shadow-lg transition-shadow duration-300">
             <div className="flex justify-between items-center md:block">
               <div className="text-gray-500 text-xs md:text-sm md:mb-1">
                 Thời lượng
               </div>
               <div className="text-lg md:text-2xl font-bold text-[#2DA6A2]">
-                {((userStats.total_duration || 0) / 60).toFixed(1)}
+                <AnimatedNumber 
+                  value={((userStats.total_duration || 0) / 60)} 
+                  duration={1200}
+                  decimals={1}
+                />
                 <span className="text-xs md:text-sm font-normal text-gray-500 ml-1">
                   phút
                 </span>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-3 md:p-4">
+          <div className="bg-white rounded-lg shadow-md p-3 md:p-4 hover:shadow-lg transition-shadow duration-300">
             <div className="flex justify-between items-center md:block">
               <div className="text-gray-500 text-xs md:text-sm md:mb-1">
                 Thành tiền
               </div>
               <div className="text-lg md:text-2xl font-bold text-green-600">
-                {new Intl.NumberFormat("vi-VN", {
-                  style: "currency",
-                  currency: "VND",
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                }).format(((userStats.total_duration || 0) / 60 / 20) * 100000)}
+                <AnimatedCurrency 
+                  value={((userStats.total_duration || 0) / 60 / 20) * 100000} 
+                  duration={1500}
+                />
               </div>
             </div>
           </div>
