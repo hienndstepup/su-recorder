@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Tạo axios instance cho API công khai (người chưa đăng nhập)
 const publicApi = axios.create({
-  baseURL: "https://tofutest.stepup.edu.vn",
+  baseURL: "https://tofu.stepup.edu.vn",
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
