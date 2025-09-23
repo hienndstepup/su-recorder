@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -12,9 +12,72 @@ export default function LoginPage() {
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [savedAccounts, setSavedAccounts] = useState([]);
+  const [showAccountDropdown, setShowAccountDropdown] = useState(false);
+  const dropdownRef = useRef(null);
   
   const { signIn } = useAuth();
   const router = useRouter();
+
+  // Load saved accounts from localStorage
+  useEffect(() => {
+    const loadSavedAccounts = () => {
+      try {
+        const savedAccountsData = localStorage.getItem('savedAccounts');
+        if (savedAccountsData) {
+          setSavedAccounts(JSON.parse(savedAccountsData));
+        }
+      } catch (error) {
+        console.error('Error loading saved accounts:', error);
+      }
+    };
+
+    loadSavedAccounts();
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowAccountDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Save account to localStorage
+  const saveAccount = (email, password) => {
+    try {
+      const newAccount = { email, password, timestamp: Date.now() };
+      const updatedAccounts = [newAccount, ...savedAccounts.filter(acc => acc.email !== email)].slice(0, 5); // Keep only 5 most recent
+      setSavedAccounts(updatedAccounts);
+      localStorage.setItem('savedAccounts', JSON.stringify(updatedAccounts));
+    } catch (error) {
+      console.error('Error saving account:', error);
+    }
+  };
+
+  // Remove account from localStorage
+  const removeAccount = (email) => {
+    try {
+      const updatedAccounts = savedAccounts.filter(acc => acc.email !== email);
+      setSavedAccounts(updatedAccounts);
+      localStorage.setItem('savedAccounts', JSON.stringify(updatedAccounts));
+    } catch (error) {
+      console.error('Error removing account:', error);
+    }
+  };
+
+  // Load account credentials
+  const loadAccount = (email, password) => {
+    setFormData({ email, password });
+    setShowAccountDropdown(false);
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -34,8 +97,15 @@ export default function LoginPage() {
       if (error) {
         setError(error.message);
       } else {
-        // Đăng nhập thành công, chuyển về trang chủ
+        // Đăng nhập thành công
         console.log('Đăng nhập thành công:', data);
+        
+        // Save account if "Remember me" is checked
+        if (rememberMe) {
+          saveAccount(formData.email, formData.password);
+        }
+        
+        // Chuyển về trang chủ
         router.push('/');
       }
     } catch (err) {
@@ -69,20 +139,67 @@ export default function LoginPage() {
           
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email */}
-            <div>
+            <div className="relative" ref={dropdownRef}>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email
               </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 text-base text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors"
-                placeholder="Nhập email của bạn"
-              />
+              <div className="relative">
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  onFocus={() => setShowAccountDropdown(savedAccounts.length > 0)}
+                  required
+                  className="w-full px-4 py-3 text-base text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] transition-colors"
+                  placeholder="Nhập email của bạn"
+                />
+                {savedAccounts.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAccountDropdown(!showAccountDropdown)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+              
+              {/* Saved Accounts Dropdown */}
+              {showAccountDropdown && savedAccounts.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {savedAccounts.map((account, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
+                      <button
+                        type="button"
+                        onClick={() => loadAccount(account.email, account.password)}
+                        className="flex-1 text-left text-sm text-gray-700 hover:text-[#2DA6A2]"
+                      >
+                        <div className="font-medium">{account.email}</div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(account.timestamp).toLocaleDateString('vi-VN')}
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeAccount(account.email);
+                        }}
+                        className="ml-2 p-1 text-gray-400 hover:text-red-500"
+                        title="Xóa tài khoản đã lưu"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Password */}
@@ -109,6 +226,8 @@ export default function LoginPage() {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="h-4 w-4 text-[#2DA6A2] focus:ring-[#2DA6A2] border-gray-300 rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
