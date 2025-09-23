@@ -211,6 +211,7 @@ const RecordPage = () => {
   const [asrResult, setAsrResult] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [isAudioReady, setIsAudioReady] = useState(false);
   const [audioDuration, setAudioDuration] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
   const audioRef = useRef(null);
@@ -287,6 +288,7 @@ const RecordPage = () => {
     console.log("Bắt đầu ghi âm");
     // Reset kết quả khi bắt đầu ghi âm mới
     setAsrResult(null);
+    setIsAudioReady(false);
   };
 
   const handleAfterRecord = async (blob) => {
@@ -572,16 +574,24 @@ const RecordPage = () => {
                   controls
                   className="w-full max-w-md"
                   src={`${asrResult.audio_url}?t=${Date.now()}`}
+                  // onLoadStart={() => {
+                  //   setIsAudioReady(false);
+                  // }}
                   onLoadedMetadata={(e) => {
                     // Làm tròn xuống để lấy số giây chính xác vì audio_duration là INTEGER
                     const duration = Math.floor(e.target.duration);
                     setAudioDuration(duration);
+                    setIsAudioReady(true);
                     console.log(
                       "Raw duration:",
                       e.target.duration,
                       "Rounded duration:",
                       duration
                     );
+                  }}
+                  onError={() => {
+                    setIsAudioReady(false);
+                    console.error("Audio loading error");
                   }}
                 >
                   <source
@@ -617,6 +627,7 @@ const RecordPage = () => {
           {asrResult && (
             <div className="mt-8 flex justify-end">
               <button
+                disabled={!isAudioReady}
                 onClick={async () => {
                   try {
                     if (!asrResult?.audio_url) {
@@ -673,6 +684,7 @@ const RecordPage = () => {
                     // Chuyển sang câu tiếp theo
                     setCurrentQuestionIndex(currentQuestionIndex + 1);
                     setAsrResult(null); // Reset kết quả ASR khi chuyển câu
+                    setIsAudioReady(false); // Reset audio ready state
                   } catch (error) {
                     console.error("Error saving recording:", error);
                     alert(
@@ -680,11 +692,25 @@ const RecordPage = () => {
                     );
                   }
                 }}
-                className="bg-[#2DA6A2] cursor-pointer hover:bg-[#2DA6A2]/90 text-white font-medium py-2 px-4 md:py-3 md:px-8 rounded-lg transition-colors text-base md:text-lg"
+                className={`font-medium py-2 px-4 md:py-3 md:px-8 rounded-lg transition-colors text-base md:text-lg ${
+                  !isAudioReady
+                    ? "bg-gray-400 cursor-not-allowed text-gray-200"
+                    : "bg-[#2DA6A2] cursor-pointer hover:bg-[#2DA6A2]/90 text-white"
+                }`}
               >
-                {currentQuestionIndex === questions.length - 1
-                  ? "Hoàn thành"
-                  : "Lưu và tiếp tục"}
+                {!isAudioReady ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Đang tải audio...
+                  </span>
+                ) : (
+                  currentQuestionIndex === questions.length - 1
+                    ? "Hoàn thành"
+                    : "Lưu và tiếp tục"
+                )}
               </button>
             </div>
           )}
