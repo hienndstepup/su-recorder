@@ -14,9 +14,99 @@ const ReportRecordingsPage = () => {
   const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0, message: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50);
+  const [copiedId, setCopiedId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("recorded_at");
   const [sortOrder, setSortOrder] = useState("desc");
+
+  // Copy to clipboard function
+  const copyToClipboard = async (text, fieldId) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(fieldId);
+      setTimeout(() => setCopiedId(null), 2000); // Hide tooltip after 2 seconds
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
+  // Export to Excel function
+  const exportToExcel = () => {
+    // Prepare data for export
+    const exportData = filteredData.map(item => ({
+      'ID': item.id,
+      'User ID': item.user_id,
+      'User Full Name': item.user_data?.full_name || '-',
+      'Question Text': item.question_data?.text || '-',
+      'Audio Script': item.audio_script || '-',
+      'Audio URL': item.audio_url || '-',
+      'Audio Duration': item.audio_duration || 0,
+      'Age': item.age || '-',
+      'Recorded At': formatDate(item.recorded_at),
+      'Question ID': item.question_data?.id || item.question_id || '-',
+      'Question Type': item.question_data?.type || '-',
+      'Question Hint': item.question_data?.hint || '-',
+      'Province Name': item.province_data?.name || '-',
+      'Total Recordings': item.user_data?.total_recordings || 0,
+      'Total Duration': item.user_data?.total_duration || 0
+    }));
+
+    // Convert to CSV format
+    const headers = Object.keys(exportData[0] || {});
+    const csvContent = [
+      headers.join(','),
+      ...exportData.map(row => 
+        headers.map(header => {
+          const value = row[header];
+          // Escape values that contain commas, quotes, or newlines
+          if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+            return `"${value.replace(/"/g, '""')}"`;
+          }
+          return value;
+        }).join(',')
+      )
+    ].join('\n');
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `recordings_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Component for copyable ID field
+  const CopyableIdField = ({ text, fieldId, maxLength = 20 }) => {
+    const displayText = text && text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+    const isCopied = copiedId === fieldId;
+    
+    return (
+      <div className="relative group">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-900 truncate">{displayText || '-'}</span>
+          <button
+            onClick={() => copyToClipboard(text, fieldId)}
+            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-gray-100 rounded"
+            title="Copy to clipboard"
+          >
+            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </button>
+        </div>
+        {/* Tooltip */}
+        {isCopied && (
+          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+            Copied!
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Fetch recordings data with pagination to get ALL records
   const fetchRecordingsData = async () => {
@@ -161,20 +251,43 @@ const ReportRecordingsPage = () => {
       // Skip invalid items
       if (!item || !item.id) return false;
       
+      // Debug: Log first item to check structure
+      if (recordingsData.length > 0 && item.id === recordingsData[0].id) {
+        console.log('First item structure:', item);
+        console.log('User Full Name:', item.user_data?.full_name);
+        console.log('Question Text:', item.question_data?.text);
+      }
+      
       if (!searchTerm) return true;
       const searchLower = searchTerm.toLowerCase();
       return (
+        item.id?.toLowerCase().includes(searchLower) ||
+        item.user_id?.toLowerCase().includes(searchLower) ||
         item.user_data?.full_name?.toLowerCase().includes(searchLower) ||
         item.question_data?.text?.toLowerCase().includes(searchLower) ||
+        item.audio_script?.toLowerCase().includes(searchLower) ||
+        item.audio_url?.toLowerCase().includes(searchLower) ||
+        item.question_data?.type?.toLowerCase().includes(searchLower) ||
+        item.question_data?.hint?.toLowerCase().includes(searchLower) ||
         item.province_data?.name?.toLowerCase().includes(searchLower) ||
+        item.question_data?.id?.toLowerCase().includes(searchLower) ||
+        item.question_id?.toLowerCase().includes(searchLower) ||
         item.user_data?.affiliate_code?.toLowerCase().includes(searchLower)
       );
     })
     .sort((a, b) => {
       let aValue, bValue;
       
-      // Handle different sort fields based on JSONB structure
+      // Handle different sort fields based on actual data structure
       switch (sortBy) {
+        case 'id':
+          aValue = a.id || '';
+          bValue = b.id || '';
+          break;
+        case 'user_id':
+          aValue = a.user_id || '';
+          bValue = b.user_id || '';
+          break;
         case 'user_full_name':
           aValue = a.user_data?.full_name || '';
           bValue = b.user_data?.full_name || '';
@@ -183,9 +296,29 @@ const ReportRecordingsPage = () => {
           aValue = a.question_data?.text || '';
           bValue = b.question_data?.text || '';
           break;
+        case 'audio_script':
+          aValue = a.audio_script || '';
+          bValue = b.audio_script || '';
+          break;
+        case 'audio_url':
+          aValue = a.audio_url || '';
+          bValue = b.audio_url || '';
+          break;
+        case 'question_type':
+          aValue = a.question_data?.type || '';
+          bValue = b.question_data?.type || '';
+          break;
+        case 'question_hint':
+          aValue = a.question_data?.hint || '';
+          bValue = b.question_data?.hint || '';
+          break;
         case 'province_name':
           aValue = a.province_data?.name || '';
           bValue = b.province_data?.name || '';
+          break;
+        case 'question_id':
+          aValue = a.question_data?.id || a.question_id || '';
+          bValue = b.question_data?.id || b.question_id || '';
           break;
         case 'recorded_at':
           aValue = new Date(a.recorded_at);
@@ -199,9 +332,13 @@ const ReportRecordingsPage = () => {
           aValue = a.age || 0;
           bValue = b.age || 0;
           break;
-        case 'payment_amount':
-          aValue = a.payment_amount || 0;
-          bValue = b.payment_amount || 0;
+        case 'total_recordings':
+          aValue = a.user_data?.total_recordings || 0;
+          bValue = b.user_data?.total_recordings || 0;
+          break;
+        case 'total_duration':
+          aValue = a.user_data?.total_duration || 0;
+          bValue = b.user_data?.total_duration || 0;
           break;
         default:
           aValue = a[sortBy] || '';
@@ -343,7 +480,7 @@ const ReportRecordingsPage = () => {
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Tìm kiếm theo tên, câu hỏi, tỉnh..."
+                    placeholder="Tìm kiếm theo ID, tên, câu hỏi, script, URL..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="text-gray-700 w-full md:w-80 px-4 py-2 pl-10 text-base md:text-sm lg:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2]"
@@ -353,25 +490,38 @@ const ReportRecordingsPage = () => {
                   </svg>
                 </div>
                 
-                <button
-                  onClick={fetchRecordingsData}
-                  disabled={isLoading}
-                  className="inline-flex items-center px-4 py-2 bg-[#2DA6A2] text-white rounded-lg hover:bg-[#2DA6A2]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Đang tải...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      Làm mới
-                    </>
-                  )}
-                </button>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={fetchRecordingsData}
+                    disabled={isLoading}
+                    className="inline-flex items-center px-4 py-2 bg-[#2DA6A2] text-white rounded-lg hover:bg-[#2DA6A2]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Đang tải...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Làm mới
+                      </>
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={exportToExcel}
+                    disabled={isLoading || filteredData.length === 0}
+                    className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Xuất Excel
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -422,114 +572,158 @@ const ReportRecordingsPage = () => {
                       <thead className="bg-gray-50">
                         <tr>
                           <th 
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                            onClick={() => handleSort('user_full_name')}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
                           >
-                            Người thu âm
-                            {sortBy === 'user_full_name' && (
-                              <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                            )}
+                            ID
                           </th>
                           <th 
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                            onClick={() => handleSort('question_text')}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
                           >
-                            Câu hỏi
-                            {sortBy === 'question_text' && (
-                              <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                            )}
+                            User ID
                           </th>
                           <th 
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                            onClick={() => handleSort('province_name')}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
                           >
-                            Tỉnh
-                            {sortBy === 'province_name' && (
-                              <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                            )}
+                            User Full Name
                           </th>
                           <th 
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                            onClick={() => handleSort('audio_duration')}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
                           >
-                            Thời lượng
-                            {sortBy === 'audio_duration' && (
-                              <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                            )}
+                            Question Text
                           </th>
                           <th 
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                            onClick={() => handleSort('age')}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
                           >
-                            Tuổi
-                            {sortBy === 'age' && (
-                              <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                            )}
+                            Audio Script
                           </th>
                           <th 
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                            onClick={() => handleSort('payment_amount')}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
                           >
-                            Thành tiền
-                            {sortBy === 'payment_amount' && (
-                              <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                            )}
+                            Audio URL
                           </th>
                           <th 
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                            onClick={() => handleSort('recorded_at')}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
                           >
-                            Ngày thu âm
-                            {sortBy === 'recorded_at' && (
-                              <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                            )}
+                            Audio Duration
+                          </th>
+                          <th 
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                          >
+                            Age
+                          </th>
+                          <th 
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                          >
+                            Recorded At
+                          </th>
+                          <th 
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                          >
+                            Question ID
+                          </th>
+                          <th 
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                          >
+                            Question Type
+                          </th>
+                          <th 
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                          >
+                            Question Hint
+                          </th>
+                          <th 
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                          >
+                            Province Name
+                          </th>
+                          <th 
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                          >
+                            Total Recordings
+                          </th>
+                          <th 
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                          >
+                            Total Duration
                           </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {currentData.map((item) => (
                           <tr key={item.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">
-                                  {item.user_data?.full_name || 'Chưa cập nhật'}
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                  {item.user_data?.affiliate_code}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="text-sm text-gray-900 max-w-xs truncate">
-                                {item.question_data?.text || 'Không có câu hỏi'}
-                              </div>
-                              {item.question_data?.type && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  Loại: {item.question_data.type}
-                                </div>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">
-                                {item.province_data?.name || 'Chưa xác định'}
-                              </div>
-                              {item.province_data?.code && (
-                                <div className="text-xs text-gray-500">
-                                  {item.province_data.code}
-                                </div>
-                              )}
-                            </td>
+                            {/* ID */}
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {formatDuration(item.audio_duration || 0)}
+                              <CopyableIdField text={item.id} fieldId={`id-${item.id}`} maxLength={20} />
                             </td>
+                            
+                            {/* User ID */}
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {item.age || 'Chưa xác định'}
+                              <CopyableIdField text={item.user_id} fieldId={`user-${item.id}`} maxLength={20} />
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                              {formatCurrency(item.payment_amount || 0)}
+                            
+                            {/* User Full Name */}
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {item.user_data?.full_name || '-'}
                             </td>
+                            
+                            {/* Question Text */}
+                            <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                              {item.question_data?.text || '-'}
+                            </td>
+                            
+                            {/* Audio Script */}
+                            <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                              {item.audio_script || '-'}
+                            </td>
+                            
+                            {/* Audio URL */}
+                            <td className="px-6 py-4 text-sm text-gray-900">
+                              <CopyableIdField text={item.audio_url} fieldId={`audio-${item.id}`} maxLength={30} />
+                            </td>
+                            
+                            {/* Audio Duration */}
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {item.audio_duration || 0}
+                            </td>
+                            
+                            {/* Age */}
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {item.age || '-'}
+                            </td>
+                            
+                            {/* Recorded At */}
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {formatDate(item.recorded_at)}
+                            </td>
+                            
+                            {/* Question ID */}
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              <CopyableIdField text={item.question_data?.id || item.question_id} fieldId={`question-${item.id}`} maxLength={20} />
+                            </td>
+                            
+                            {/* Question Type */}
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {item.question_data?.type || '-'}
+                            </td>
+                            
+                            {/* Question Hint */}
+                            <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                              {item.question_data?.hint || '-'}
+                            </td>
+                            
+                            {/* Province Name */}
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {item.province_data?.name || '-'}
+                            </td>
+                            
+                            {/* Total Recordings */}
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {item.user_data?.total_recordings || 0}
+                            </td>
+                            
+                            {/* Total Duration */}
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {item.user_data?.total_duration || 0}
                             </td>
                           </tr>
                         ))}
@@ -547,7 +741,7 @@ const ReportRecordingsPage = () => {
                         <button
                           onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                           disabled={currentPage === 1}
-                          className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="text-black px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Trước
                         </button>
@@ -557,7 +751,7 @@ const ReportRecordingsPage = () => {
                         <button
                           onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                           disabled={currentPage === totalPages}
-                          className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="text-black px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Sau
                         </button>
