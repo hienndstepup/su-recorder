@@ -103,6 +103,7 @@ const RecordPage = () => {
     total_recordings: 0,
     total_duration: 0,
   });
+  const [currentSession, setCurrentSession] = useState(null);
 
   // Fetch user stats
   const fetchUserStats = async () => {
@@ -121,9 +122,43 @@ const RecordPage = () => {
     }
   };
 
+  // Create new session
+  const createSession = async () => {
+    if (!user) return null;
+    try {
+      const { data, error } = await supabase
+        .from("sessions")
+        .insert({ user_id: user.id })
+        .select()
+        .single();
+
+      if (error) throw error;
+      console.log("Session created:", data);
+      return data;
+    } catch (error) {
+      console.error("Error creating session:", error);
+      return null;
+    }
+  };
+
   // Fetch initial stats when component mounts
   useEffect(() => {
     fetchUserStats();
+  }, [user]);
+
+  // Create session when component mounts
+  useEffect(() => {
+    const initializeSession = async () => {
+      if (user) {
+        const session = await createSession();
+        if (session) {
+          setCurrentSession(session);
+          console.log("Current session ID:", session.id);
+        }
+      }
+    };
+
+    initializeSession();
   }, [user]);
 
   // State để lưu danh sách câu hỏi và câu hỏi hiện tại
@@ -347,6 +382,11 @@ const RecordPage = () => {
             {user
               ? `Xin chào, ${user?.user_metadata?.full_name || user?.email}`
               : "Trang ghi âm"}
+            {currentSession && (
+              <div className="text-xs text-gray-400 mt-1">
+                Session: {currentSession.id.slice(0, 8)}...
+              </div>
+            )}
           </div>
           <Link
             href="/"
@@ -584,6 +624,12 @@ const RecordPage = () => {
                       return;
                     }
 
+                    // Kiểm tra session
+                    if (!currentSession) {
+                      alert("Session chưa được khởi tạo. Vui lòng thử lại.");
+                      return;
+                    }
+
                     // Lấy province_id từ localStorage
                     const recorderInfo = JSON.parse(
                       localStorage.getItem("recorderInfo") || "{}"
@@ -609,6 +655,7 @@ const RecordPage = () => {
                         audio_script: asrResult.audio_script,
                         age: recorderInfo.age,
                         recorded_at: new Date().toISOString(),
+                        session_id: currentSession?.id || null,
                       });
 
                     if (recordingError) throw recordingError;
