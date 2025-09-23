@@ -212,6 +212,7 @@ const RecordPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [isAudioReady, setIsAudioReady] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [audioDuration, setAudioDuration] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
   const audioRef = useRef(null);
@@ -627,17 +628,20 @@ const RecordPage = () => {
           {asrResult && (
             <div className="mt-8 flex justify-end">
               <button
-                disabled={!isAudioReady}
+                disabled={!isAudioReady || isSaving}
                 onClick={async () => {
                   try {
+                    setIsSaving(true);
                     if (!asrResult?.audio_url) {
                       alert("Vui lòng thu âm câu trả lời trước khi tiếp tục.");
+                      setIsSaving(false);
                       return;
                     }
 
                     // Kiểm tra session
                     if (!currentSession) {
                       alert("Session chưa được khởi tạo. Vui lòng thử lại.");
+                      setIsSaving(false);
                       return;
                     }
 
@@ -651,6 +655,7 @@ const RecordPage = () => {
                       alert(
                         "Không tìm thấy thông tin tỉnh/thành phố. Vui lòng quay lại trang chủ."
                       );
+                      setIsSaving(false);
                       return;
                     }
 
@@ -678,6 +683,7 @@ const RecordPage = () => {
                     if (currentQuestionIndex === questions.length - 1) {
                       alert("Chúc mừng bạn đã hoàn thành bài thu âm!");
                       router.push("/");
+                      setIsSaving(false);
                       return;
                     }
 
@@ -685,15 +691,17 @@ const RecordPage = () => {
                     setCurrentQuestionIndex(currentQuestionIndex + 1);
                     setAsrResult(null); // Reset kết quả ASR khi chuyển câu
                     setIsAudioReady(false); // Reset audio ready state
+                    setIsSaving(false); // Reset saving state
                   } catch (error) {
                     console.error("Error saving recording:", error);
                     alert(
                       "Có lỗi xảy ra khi lưu bài thu âm. Vui lòng thử lại."
                     );
+                    setIsSaving(false);
                   }
                 }}
                 className={`font-medium py-2 px-4 md:py-3 md:px-8 rounded-lg transition-colors text-base md:text-lg ${
-                  !isAudioReady
+                  !isAudioReady || isSaving
                     ? "bg-gray-400 cursor-not-allowed text-gray-200"
                     : "bg-[#2DA6A2] cursor-pointer hover:bg-[#2DA6A2]/90 text-white"
                 }`}
@@ -705,6 +713,14 @@ const RecordPage = () => {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     Đang tải audio...
+                  </span>
+                ) : isSaving ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Đang lưu...
                   </span>
                 ) : (
                   currentQuestionIndex === questions.length - 1
