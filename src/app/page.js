@@ -22,6 +22,32 @@ export default function Home() {
   const [regions, setRegions] = useState([]);
   const [provinces, setProvinces] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [isLoadingFromStorage, setIsLoadingFromStorage] = useState(false);
+
+  // Load recorderInfo from localStorage after regions are loaded
+  useEffect(() => {
+    const loadRecorderInfo = () => {
+      try {
+        const savedRecorderInfo = localStorage.getItem("recorderInfo");
+        if (savedRecorderInfo) {
+          const recorderInfo = JSON.parse(savedRecorderInfo);
+          setIsLoadingFromStorage(true);
+          setFormData({
+            age: recorderInfo.age || "",
+            region: recorderInfo.region || "",
+            province: recorderInfo.province || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error loading recorderInfo from localStorage:", error);
+      }
+    };
+
+    // Only load recorderInfo after regions are available
+    if (regions.length > 0) {
+      loadRecorderInfo();
+    }
+  }, [regions]);
 
   // Fetch regions
   useEffect(() => {
@@ -81,12 +107,17 @@ export default function Home() {
           }))
         );
 
-        // Reset province selection when region changes
-        if (formData.province) {
+        // Reset province selection when region changes (but not when loading from localStorage)
+        if (formData.province && !isLoadingFromStorage) {
           setFormData((prev) => ({
             ...prev,
             province: "",
           }));
+        }
+        
+        // Reset the loading flag after provinces are loaded
+        if (isLoadingFromStorage) {
+          setIsLoadingFromStorage(false);
         }
       } catch (error) {
         console.error("Error fetching provinces:", error.message);
