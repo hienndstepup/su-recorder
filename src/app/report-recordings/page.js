@@ -35,6 +35,7 @@ const ReportRecordingsPage = () => {
     // Prepare data for export
     const exportData = filteredData.map(item => ({
       'ID': item.id,
+      'Session ID': item.session_id || '-',
       'User ID': item.user_id,
       'User Full Name': item.user_data?.full_name || '-',
       'Question Text': item.question_data?.text || '-',
@@ -193,6 +194,7 @@ const ReportRecordingsPage = () => {
         // Transform the batch data
         const transformedBatch = (batchData || []).map(item => ({
           id: item.id,
+          session_id: item.session_id,
           user_id: item.user_id,
           audio_url: item.audio_url,
           audio_duration: item.audio_duration,
@@ -579,6 +581,11 @@ const ReportRecordingsPage = () => {
                           <th 
                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
                           >
+                            Session ID
+                          </th>
+                          <th 
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                          >
                             User ID
                           </th>
                           <th 
@@ -654,6 +661,15 @@ const ReportRecordingsPage = () => {
                             {/* ID */}
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               <CopyableIdField text={item.id} fieldId={`id-${item.id}`} maxLength={20} />
+                            </td>
+                            
+                            {/* Session ID */}
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {item.session_id ? (
+                                <CopyableIdField text={item.session_id} fieldId={`session-${item.id}`} maxLength={20} />
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
                             </td>
                             
                             {/* User ID */}
