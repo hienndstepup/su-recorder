@@ -2,7 +2,7 @@
 DROP FUNCTION IF EXISTS public.get_auth_users_emails(uuid);
 DROP FUNCTION IF EXISTS public.get_auth_users_emails();
 
--- Tạo lại function chỉ lấy email CTV cấp dưới (referrer_id = current user)
+-- Tạo lại function: admin lấy tất cả email, CTV lấy email cấp dưới
 CREATE OR REPLACE FUNCTION public.get_auth_users_emails(current_user_id uuid DEFAULT NULL)
 RETURNS TABLE(id uuid, email character varying)
 LANGUAGE plpgsql
@@ -11,6 +11,7 @@ SET search_path = public
 AS $$
 DECLARE
   user_profile_id uuid;
+  current_user_role VARCHAR(20);
 BEGIN
   -- Ưu tiên tham số truyền vào; nếu không có thì lấy auth.uid()
   IF current_user_id IS NOT NULL THEN
@@ -19,6 +20,11 @@ BEGIN
     user_profile_id := auth.uid();
   END IF;
 
+  -- Lấy role của user hiện tại
+  SELECT p.role INTO current_user_role
+  FROM public.profiles p
+  WHERE p.id = user_profile_id;
+
   RETURN QUERY
   SELECT 
     au.id,
@@ -26,8 +32,13 @@ BEGIN
   FROM auth.users au
   JOIN public.profiles p ON p.id = au.id
   WHERE au.email IS NOT NULL
-    AND p.role = 'ctv'
-    AND p.referrer_id = user_profile_id;
+    AND (
+      -- Admin: lấy tất cả email của tất cả users
+      current_user_role = 'admin'
+      OR
+      -- CTV: chỉ lấy email của cấp dưới
+      (current_user_role = 'ctv' AND p.role = 'ctv' AND p.referrer_id = user_profile_id)
+    );
 END;
 $$;
 
