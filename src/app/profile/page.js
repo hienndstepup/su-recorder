@@ -210,7 +210,7 @@ export default function ProfilePage() {
                 {/* Terms Link */}
                 <div className="mt-3">
                   <a
-                    href="https://shinec.com.vn/wp-content/uploads/2021/12/DAY-LA-FILE-MAU-PDF.pdf"
+                    href="/CAM_KET_SU_DUNG_DU_LIEU.pdf"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center text-[#2DA6A2] hover:text-[#2DA6A2]/80 font-medium text-sm md:text-base transition-colors"
