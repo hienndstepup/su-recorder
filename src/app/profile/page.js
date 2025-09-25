@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import SignaturePadComponent from "@/components/SignaturePad";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -28,6 +29,9 @@ export default function ProfilePage() {
   const [uploadingFront, setUploadingFront] = useState(false);
   const [uploadingBack, setUploadingBack] = useState(false);
   const [lightboxImage, setLightboxImage] = useState(null);
+  const [signature, setSignature] = useState(null);
+  const [isSavingSignature, setIsSavingSignature] = useState(false);
+  const [signatureSaved, setSignatureSaved] = useState(false);
   
   const checkRequiredFields = (data) => {
     return !!(
@@ -70,6 +74,12 @@ export default function ProfilePage() {
         if (error) throw error;
 
         setProfileData(data);
+        
+        // Load signature if exists
+        if (data.signature) {
+          setSignature(data.signature);
+          setSignatureSaved(true); // Mark as saved since it's from DB
+        }
       } catch (error) {
         console.error("Error fetching profile:", error.message);
         alert("Không thể tải thông tin profile. Vui lòng thử lại sau.");
@@ -142,6 +152,36 @@ export default function ProfilePage() {
     }));
   };
 
+  const handleSignatureChange = (signatureData) => {
+    setSignature(signatureData);
+  };
+
+  const saveSignature = async () => {
+    if (!signature) {
+      alert('Vui lòng ký vào ô chữ ký trước khi lưu!');
+      return;
+    }
+
+    try {
+      setIsSavingSignature(true);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ signature: signature })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setSignatureSaved(true); // Mark as saved after successful save
+      alert('Chữ ký đã được lưu thành công!');
+    } catch (error) {
+      console.error('Error saving signature:', error);
+      alert('Không thể lưu chữ ký. Vui lòng thử lại.');
+    } finally {
+      setIsSavingSignature(false);
+    }
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
@@ -166,6 +206,71 @@ export default function ProfilePage() {
                 <p className="text-base md:text-lg text-gray-600">
                   Quản lý thông tin tài khoản
                 </p>
+                
+                {/* Terms Link */}
+                <div className="mt-3">
+                  <a
+                    href="https://shinec.com.vn/wp-content/uploads/2021/12/DAY-LA-FILE-MAU-PDF.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-[#2DA6A2] hover:text-[#2DA6A2]/80 font-medium text-sm md:text-base transition-colors"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Điều khoản
+                  </a>
+                </div>
+
+                {/* Signature Section */}
+                <div className="mt-6 p-4 bg-white rounded-lg shadow-md">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-[#2DA6A2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    Chữ ký
+                  </h3>
+                  
+                  <div className="mb-4">
+                    <SignaturePadComponent
+                      onSignatureChange={handleSignatureChange}
+                      initialSignature={signature}
+                      width={600}
+                      height={200}
+                      className="w-full"
+                      readonly={signatureSaved}
+                    />
+                  </div>
+                  
+                  {/* Only show save button if signature not saved */}
+                  {!signatureSaved && (
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        onClick={saveSignature}
+                        disabled={!signature || isSavingSignature}
+                        className="px-4 py-2 bg-[#2DA6A2] text-white rounded-lg hover:bg-[#2DA6A2]/90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center"
+                      >
+                        {isSavingSignature ? (
+                          <>
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Đang lưu...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                            </svg>
+                            Lưu chữ ký
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {!checkRequiredFields(profileData) && (
                   <p className="mt-2 text-orange-500 text-sm md:text-base font-medium flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 mr-2">

@@ -942,6 +942,39 @@ function ManageCTVPageContent() {
               </div>
             </div>
 
+            {/* Signature Section */}
+            <div className="mb-6">
+              {selectedUserDetail.signature ? (
+                <button
+                  onClick={() => setLightboxImage(selectedUserDetail.signature)}
+                  className="w-full flex items-center justify-between p-3 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg transition-colors group"
+                >
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    <span className="text-sm font-medium text-green-700">Chữ ký</span>
+                  </div>
+                  <div className="flex items-center text-green-600">
+                    <span className="text-xs mr-2">Đã ký</span>
+                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </button>
+              ) : (
+                <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    <span className="text-sm font-medium text-gray-500">Chữ ký</span>
+                  </div>
+                  <span className="text-xs text-gray-400">Chưa ký</span>
+                </div>
+              )}
+            </div>
+
             {/* Info Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Basic Info Section */}
