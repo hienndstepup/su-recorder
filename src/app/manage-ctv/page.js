@@ -50,13 +50,15 @@ function ManageCTVPageContent() {
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
 
   // Lấy giá trị từ URL params hoặc dùng giá trị mặc định
-  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams.get("search") || ""
+  );
   const [sortBy, setSortBy] = useState(searchParams.get("sort") || "all"); // "all", "most", "least"
 
   // Hàm cập nhật URL params
   const updateUrlParams = (params) => {
     const newSearchParams = new URLSearchParams(searchParams);
-    
+
     // Cập nhật hoặc xóa params
     Object.entries(params).forEach(([key, value]) => {
       if (value) {
@@ -127,6 +129,7 @@ function ManageCTVPageContent() {
         if (!user) return; // Không fetch nếu chưa có user
 
         setIsLoading(true);
+
         // Lấy danh sách profiles của CTV
         const { data: profilesData, error: profilesError } = await supabase
           .from("profiles")
@@ -137,7 +140,30 @@ function ManageCTVPageContent() {
 
         if (profilesError) throw profilesError;
 
-        setCtvList(profilesData);
+        // Lấy email từ auth.users cho CTV cấp dưới
+        const { data: authUsersData, error: authUsersError } =
+          await supabase.rpc("get_auth_users_emails", { current_user_id: user.id });
+
+        if (authUsersError) {
+          console.error("Error fetching auth users emails:", authUsersError);
+          // Fallback: set profiles data without emails
+          setCtvList(profilesData);
+          return;
+        }
+
+        // Map email với profilesData
+        const profilesWithEmails = profilesData.map((profile) => {
+          const authUser = authUsersData.find(
+            (authUser) => authUser.id === profile.id
+          );
+          console.log(`Profile ${profile.id}:`, profile.full_name, '-> Auth user:', authUser);
+          return {
+            ...profile,
+            email: authUser ? authUser.email : null,
+          };
+        });
+
+        setCtvList(profilesWithEmails);
       } catch (error) {
         console.error("Error fetching CTV list:", error.message);
         alert("Không thể tải danh sách CTV. Vui lòng thử lại sau.");
@@ -369,7 +395,7 @@ function ManageCTVPageContent() {
                     onClick={clearAllFilters}
                     className="inline-flex items-center px-3 py-1.5 md:px-4 md:py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm md:text-base rounded-lg transition-colors mt-4 md:mt-0"
                   >
-                    <svg 
+                    <svg
                       className="w-4 h-4 mr-1.5"
                       fill="none"
                       stroke="currentColor"
@@ -508,7 +534,7 @@ function ManageCTVPageContent() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {filteredCTV.map((ctv) => (
                         <tr key={ctv.id} className="hover:bg-gray-50">
-                          <td 
+                          <td
                             className="px-6 py-4 whitespace-nowrap cursor-pointer hover:bg-gray-50 group"
                             onClick={() => {
                               setSelectedUserDetail(ctv);
@@ -546,6 +572,9 @@ function ManageCTVPageContent() {
                                 <div className="text-xs md:text-sm font-medium text-gray-900 group-hover:text-[#2DA6A2] transition-colors text-left">
                                   {ctv.full_name || "Chưa cập nhật"}
                                 </div>
+                                <div className="text-[10px] md:text-xs text-gray-500 mt-0.5">
+                                  {ctv.email || "Chưa có email"}
+                                </div>
                                 <div className="text-[10px] md:text-xs mt-0.5">
                                   {ctv.phone &&
                                   ctv.id_number &&
@@ -579,27 +608,39 @@ function ManageCTVPageContent() {
                               <button
                                 onClick={async () => {
                                   try {
-                                    console.log('Updating is_pass for user:', ctv.id, 'to:', !ctv.is_pass);
-                                    const { error } = await supabase
-                                      .rpc('update_profile_info', {
+                                    console.log(
+                                      "Updating is_pass for user:",
+                                      ctv.id,
+                                      "to:",
+                                      !ctv.is_pass
+                                    );
+                                    const { error } = await supabase.rpc(
+                                      "update_profile_info",
+                                      {
                                         profile_id: ctv.id,
                                         new_is_pass: !ctv.is_pass,
-                                      });
+                                      }
+                                    );
 
-                                    console.log('Update response:', { error });
+                                    console.log("Update response:", { error });
                                     if (error) throw error;
 
                                     // Update local state
-                                    setCtvList(prev =>
-                                      prev.map(item =>
+                                    setCtvList((prev) =>
+                                      prev.map((item) =>
                                         item.id === ctv.id
                                           ? { ...item, is_pass: !item.is_pass }
                                           : item
                                       )
                                     );
                                   } catch (error) {
-                                    console.error("Error updating pass status:", error);
-                                    alert("Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại.");
+                                    console.error(
+                                      "Error updating pass status:",
+                                      error
+                                    );
+                                    alert(
+                                      "Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại."
+                                    );
                                   }
                                 }}
                                 className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#2DA6A2] focus:ring-offset-2 ${
@@ -611,7 +652,9 @@ function ManageCTVPageContent() {
                                 <span
                                   aria-hidden="true"
                                   className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                    ctv.is_pass ? "translate-x-5" : "translate-x-0"
+                                    ctv.is_pass
+                                      ? "translate-x-5"
+                                      : "translate-x-0"
                                   }`}
                                 />
                               </button>
@@ -904,32 +947,48 @@ function ManageCTVPageContent() {
               }}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-6 h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
 
             {/* Header with Avatar */}
             <div className="flex items-center mb-6">
-              <div className={`w-12 h-12 md:w-14 md:h-14 bg-[#2DA6A2] rounded-full flex items-center justify-center border-2 ${
-                selectedUserDetail.phone &&
-                selectedUserDetail.id_number &&
-                selectedUserDetail.address &&
-                selectedUserDetail.bank_account_name &&
-                selectedUserDetail.bank_name &&
-                selectedUserDetail.bank_account_number
-                  ? "border-[#2DA6A2]"
-                  : !selectedUserDetail.phone &&
-                    !selectedUserDetail.id_number &&
-                    !selectedUserDetail.address &&
-                    !selectedUserDetail.bank_account_name &&
-                    !selectedUserDetail.bank_name &&
-                    !selectedUserDetail.bank_account_number
-                  ? "border-red-500"
-                  : "border-orange-400"
-              }`}>
+              <div
+                className={`w-12 h-12 md:w-14 md:h-14 bg-[#2DA6A2] rounded-full flex items-center justify-center border-2 ${
+                  selectedUserDetail.phone &&
+                  selectedUserDetail.id_number &&
+                  selectedUserDetail.address &&
+                  selectedUserDetail.bank_account_name &&
+                  selectedUserDetail.bank_name &&
+                  selectedUserDetail.bank_account_number
+                    ? "border-[#2DA6A2]"
+                    : !selectedUserDetail.phone &&
+                      !selectedUserDetail.id_number &&
+                      !selectedUserDetail.address &&
+                      !selectedUserDetail.bank_account_name &&
+                      !selectedUserDetail.bank_name &&
+                      !selectedUserDetail.bank_account_number
+                    ? "border-red-500"
+                    : "border-orange-400"
+                }`}
+              >
                 <span className="text-white text-lg font-medium">
-                  {(selectedUserDetail.full_name || "").split(" ").map((n) => n[0]).join("")}
+                  {(selectedUserDetail.full_name || "")
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
                 </span>
               </div>
               <div className="ml-4">
@@ -950,25 +1009,59 @@ function ManageCTVPageContent() {
                   className="w-full flex items-center justify-between p-3 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg transition-colors group"
                 >
                   <div className="flex items-center">
-                    <svg className="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    <svg
+                      className="w-5 h-5 text-green-600 mr-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                      />
                     </svg>
-                    <span className="text-sm font-medium text-green-700">Chữ ký</span>
+                    <span className="text-sm font-medium text-green-700">
+                      Chữ ký
+                    </span>
                   </div>
                   <div className="flex items-center text-green-600">
                     <span className="text-xs mr-2">Đã ký</span>
-                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg
+                      className="w-4 h-4 group-hover:translate-x-1 transition-transform"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
                   </div>
                 </button>
               ) : (
                 <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
                   <div className="flex items-center">
-                    <svg className="w-5 h-5 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    <svg
+                      className="w-5 h-5 text-gray-400 mr-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                      />
                     </svg>
-                    <span className="text-sm font-medium text-gray-500">Chữ ký</span>
+                    <span className="text-sm font-medium text-gray-500">
+                      Chữ ký
+                    </span>
                   </div>
                   <span className="text-xs text-gray-400">Chưa ký</span>
                 </div>
@@ -979,7 +1072,9 @@ function ManageCTVPageContent() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Basic Info Section */}
               <div className="space-y-4">
-                <h4 className="text-sm font-medium text-gray-900 border-b pb-2">Thông tin cơ bản</h4>
+                <h4 className="text-sm font-medium text-gray-900 border-b pb-2">
+                  Thông tin cơ bản
+                </h4>
                 <div className="space-y-3">
                   <div>
                     <p className="text-xs text-gray-500">Họ và tên</p>
@@ -987,24 +1082,47 @@ function ManageCTVPageContent() {
                       <input
                         type="text"
                         value={editData.full_name}
-                        onChange={(e) => setEditData(prev => ({ ...prev, full_name: e.target.value }))}
+                        onChange={(e) =>
+                          setEditData((prev) => ({
+                            ...prev,
+                            full_name: e.target.value,
+                          }))
+                        }
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900"
                         placeholder="Nhập họ và tên"
                       />
                     ) : (
-                      <p className={`text-sm ${selectedUserDetail.full_name ? "text-gray-900" : "text-red-500"}`}>
+                      <p
+                        className={`text-sm ${
+                          selectedUserDetail.full_name
+                            ? "text-gray-900"
+                            : "text-red-500"
+                        }`}
+                      >
                         {selectedUserDetail.full_name || "Chưa cập nhật"}
                       </p>
                     )}
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Vai trò</p>
-                    <p className="text-sm text-gray-900">{selectedUserDetail.role === "ctv" ? "Cộng tác viên" : "Admin"}</p>
+                    <p className="text-sm text-gray-900">
+                      {selectedUserDetail.role === "ctv"
+                        ? "Cộng tác viên"
+                        : "Admin"}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Trạng thái</p>
-                    <p className={`text-sm ${selectedUserDetail.status === "active" ? "text-green-600" : "text-red-600"}`}>
-                      {selectedUserDetail.status === "active" ? "Hoạt động" : "Không hoạt động"}
+                    <p
+                      className={`text-sm ${
+                        selectedUserDetail.status === "active"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {selectedUserDetail.status === "active"
+                        ? "Hoạt động"
+                        : "Không hoạt động"}
                     </p>
                   </div>
                   <div>
@@ -1013,12 +1131,23 @@ function ManageCTVPageContent() {
                       <input
                         type="text"
                         value={editData.phone}
-                        onChange={(e) => setEditData(prev => ({ ...prev, phone: e.target.value }))}
+                        onChange={(e) =>
+                          setEditData((prev) => ({
+                            ...prev,
+                            phone: e.target.value,
+                          }))
+                        }
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900"
                         placeholder="Nhập số điện thoại"
                       />
                     ) : (
-                      <p className={`text-sm ${selectedUserDetail.phone ? "text-gray-900" : "text-red-500"}`}>
+                      <p
+                        className={`text-sm ${
+                          selectedUserDetail.phone
+                            ? "text-gray-900"
+                            : "text-red-500"
+                        }`}
+                      >
                         {selectedUserDetail.phone || "Chưa cập nhật"}
                       </p>
                     )}
@@ -1029,12 +1158,23 @@ function ManageCTVPageContent() {
                       <input
                         type="text"
                         value={editData.id_number}
-                        onChange={(e) => setEditData(prev => ({ ...prev, id_number: e.target.value }))}
+                        onChange={(e) =>
+                          setEditData((prev) => ({
+                            ...prev,
+                            id_number: e.target.value,
+                          }))
+                        }
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900"
                         placeholder="Nhập số CCCD"
                       />
                     ) : (
-                      <p className={`text-sm ${selectedUserDetail.id_number ? "text-gray-900" : "text-red-500"}`}>
+                      <p
+                        className={`text-sm ${
+                          selectedUserDetail.id_number
+                            ? "text-gray-900"
+                            : "text-red-500"
+                        }`}
+                      >
                         {selectedUserDetail.id_number || "Chưa cập nhật"}
                       </p>
                     )}
@@ -1045,12 +1185,23 @@ function ManageCTVPageContent() {
                       <input
                         type="text"
                         value={editData.address}
-                        onChange={(e) => setEditData(prev => ({ ...prev, address: e.target.value }))}
+                        onChange={(e) =>
+                          setEditData((prev) => ({
+                            ...prev,
+                            address: e.target.value,
+                          }))
+                        }
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900"
                         placeholder="Nhập địa chỉ"
                       />
                     ) : (
-                      <p className={`text-sm ${selectedUserDetail.address ? "text-gray-900" : "text-red-500"}`}>
+                      <p
+                        className={`text-sm ${
+                          selectedUserDetail.address
+                            ? "text-gray-900"
+                            : "text-red-500"
+                        }`}
+                      >
                         {selectedUserDetail.address || "Chưa cập nhật"}
                       </p>
                     )}
@@ -1066,22 +1217,48 @@ function ManageCTVPageContent() {
                                 src={editData.front_cccd}
                                 alt="Mặt trước CCCD"
                                 className="max-h-32 mx-auto cursor-pointer hover:opacity-80 transition-opacity"
-                                onClick={() => setLightboxImage(editData.front_cccd)}
+                                onClick={() =>
+                                  setLightboxImage(editData.front_cccd)
+                                }
                               />
                               <button
                                 type="button"
-                                onClick={() => setEditData(prev => ({ ...prev, front_cccd: "" }))}
+                                onClick={() =>
+                                  setEditData((prev) => ({
+                                    ...prev,
+                                    front_cccd: "",
+                                  }))
+                                }
                                 className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                               >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                    clipRule="evenodd"
+                                  />
                                 </svg>
                               </button>
                             </div>
                           ) : (
                             <>
-                              <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <svg
+                                className="mx-auto h-12 w-12 text-gray-400"
+                                stroke="currentColor"
+                                fill="none"
+                                viewBox="0 0 48 48"
+                              >
+                                <path
+                                  d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
                               </svg>
                               <div className="flex text-sm text-gray-600">
                                 <label className="relative cursor-pointer rounded-md font-medium text-[#2DA6A2] hover:text-[#2DA6A2]/90 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-[#2DA6A2]">
@@ -1095,46 +1272,70 @@ function ManageCTVPageContent() {
                                         setUploadingFront(true);
                                         try {
                                           const formData = new FormData();
-                                          formData.append('files', file);
-                                          formData.append('fileTypes', file.type);
-                                          formData.append('objectKey', 'web_mvp/sub_recordings/thumb');
+                                          formData.append("files", file);
+                                          formData.append(
+                                            "fileTypes",
+                                            file.type
+                                          );
+                                          formData.append(
+                                            "objectKey",
+                                            "web_mvp/sub_recordings/thumb"
+                                          );
 
-                                          const response = await fetch('https://mvp-api.hacknao.edu.vn/api/v1/upload', {
-                                            method: 'POST',
-                                            body: formData,
-                                            headers: {
-                                              'accept': 'application/json, text/plain, */*',
-                                              'accept-language': 'en-US,en;q=0.9,vi;q=0.8',
-                                              'authorization': 'Bearer undefined',
-                                              'origin': 'https://mvp.hacknao.edu.vn',
-                                              'priority': 'u=1, i',
-                                              'referer': 'https://mvp.hacknao.edu.vn/',
-                                              'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
-                                              'sec-ch-ua-mobile': '?0',
-                                              'sec-ch-ua-platform': '"macOS"',
-                                              'sec-fetch-dest': 'empty',
-                                              'sec-fetch-mode': 'cors',
-                                              'sec-fetch-site': 'same-site',
-                                              'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
-                                            },
-                                          });
+                                          const response = await fetch(
+                                            "https://mvp-api.hacknao.edu.vn/api/v1/upload",
+                                            {
+                                              method: "POST",
+                                              body: formData,
+                                              headers: {
+                                                accept:
+                                                  "application/json, text/plain, */*",
+                                                "accept-language":
+                                                  "en-US,en;q=0.9,vi;q=0.8",
+                                                authorization:
+                                                  "Bearer undefined",
+                                                origin:
+                                                  "https://mvp.hacknao.edu.vn",
+                                                priority: "u=1, i",
+                                                referer:
+                                                  "https://mvp.hacknao.edu.vn/",
+                                                "sec-ch-ua":
+                                                  '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
+                                                "sec-ch-ua-mobile": "?0",
+                                                "sec-ch-ua-platform": '"macOS"',
+                                                "sec-fetch-dest": "empty",
+                                                "sec-fetch-mode": "cors",
+                                                "sec-fetch-site": "same-site",
+                                                "user-agent":
+                                                  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+                                              },
+                                            }
+                                          );
 
                                           if (!response.ok) {
-                                            throw new Error('Upload failed');
+                                            throw new Error("Upload failed");
                                           }
 
-                                          const { urls } = await response.json();
+                                          const { urls } =
+                                            await response.json();
                                           if (urls && urls.length > 0) {
-                                            setEditData(prev => ({
+                                            setEditData((prev) => ({
                                               ...prev,
-                                              front_cccd: urls[0]
+                                              front_cccd: urls[0],
                                             }));
                                           } else {
-                                            throw new Error('No URL returned from server');
+                                            throw new Error(
+                                              "No URL returned from server"
+                                            );
                                           }
                                         } catch (error) {
-                                          console.error('Error uploading image:', error);
-                                          alert('Lỗi khi tải ảnh lên. Vui lòng thử lại.');
+                                          console.error(
+                                            "Error uploading image:",
+                                            error
+                                          );
+                                          alert(
+                                            "Lỗi khi tải ảnh lên. Vui lòng thử lại."
+                                          );
                                         } finally {
                                           setUploadingFront(false);
                                         }
@@ -1161,7 +1362,9 @@ function ManageCTVPageContent() {
                             src={selectedUserDetail.front_cccd}
                             alt="Mặt trước CCCD"
                             className="max-h-32 rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => setLightboxImage(selectedUserDetail.front_cccd)}
+                            onClick={() =>
+                              setLightboxImage(selectedUserDetail.front_cccd)
+                            }
                           />
                         ) : (
                           <p className="text-sm text-red-500 py-1.5 md:py-2">
@@ -1182,22 +1385,48 @@ function ManageCTVPageContent() {
                                 src={editData.back_cccd}
                                 alt="Mặt sau CCCD"
                                 className="max-h-32 mx-auto cursor-pointer hover:opacity-80 transition-opacity"
-                                onClick={() => setLightboxImage(editData.back_cccd)}
+                                onClick={() =>
+                                  setLightboxImage(editData.back_cccd)
+                                }
                               />
                               <button
                                 type="button"
-                                onClick={() => setEditData(prev => ({ ...prev, back_cccd: "" }))}
+                                onClick={() =>
+                                  setEditData((prev) => ({
+                                    ...prev,
+                                    back_cccd: "",
+                                  }))
+                                }
                                 className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                               >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                    clipRule="evenodd"
+                                  />
                                 </svg>
                               </button>
                             </div>
                           ) : (
                             <>
-                              <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <svg
+                                className="mx-auto h-12 w-12 text-gray-400"
+                                stroke="currentColor"
+                                fill="none"
+                                viewBox="0 0 48 48"
+                              >
+                                <path
+                                  d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
                               </svg>
                               <div className="flex text-sm text-gray-600">
                                 <label className="relative cursor-pointer rounded-md font-medium text-[#2DA6A2] hover:text-[#2DA6A2]/90 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-[#2DA6A2]">
@@ -1211,46 +1440,70 @@ function ManageCTVPageContent() {
                                         setUploadingBack(true);
                                         try {
                                           const formData = new FormData();
-                                          formData.append('files', file);
-                                          formData.append('fileTypes', file.type);
-                                          formData.append('objectKey', 'web_mvp/sub_recordings/thumb');
+                                          formData.append("files", file);
+                                          formData.append(
+                                            "fileTypes",
+                                            file.type
+                                          );
+                                          formData.append(
+                                            "objectKey",
+                                            "web_mvp/sub_recordings/thumb"
+                                          );
 
-                                          const response = await fetch('https://mvp-api.hacknao.edu.vn/api/v1/upload', {
-                                            method: 'POST',
-                                            body: formData,
-                                            headers: {
-                                              'accept': 'application/json, text/plain, */*',
-                                              'accept-language': 'en-US,en;q=0.9,vi;q=0.8',
-                                              'authorization': 'Bearer undefined',
-                                              'origin': 'https://mvp.hacknao.edu.vn',
-                                              'priority': 'u=1, i',
-                                              'referer': 'https://mvp.hacknao.edu.vn/',
-                                              'sec-ch-ua': '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
-                                              'sec-ch-ua-mobile': '?0',
-                                              'sec-ch-ua-platform': '"macOS"',
-                                              'sec-fetch-dest': 'empty',
-                                              'sec-fetch-mode': 'cors',
-                                              'sec-fetch-site': 'same-site',
-                                              'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
-                                            },
-                                          });
+                                          const response = await fetch(
+                                            "https://mvp-api.hacknao.edu.vn/api/v1/upload",
+                                            {
+                                              method: "POST",
+                                              body: formData,
+                                              headers: {
+                                                accept:
+                                                  "application/json, text/plain, */*",
+                                                "accept-language":
+                                                  "en-US,en;q=0.9,vi;q=0.8",
+                                                authorization:
+                                                  "Bearer undefined",
+                                                origin:
+                                                  "https://mvp.hacknao.edu.vn",
+                                                priority: "u=1, i",
+                                                referer:
+                                                  "https://mvp.hacknao.edu.vn/",
+                                                "sec-ch-ua":
+                                                  '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
+                                                "sec-ch-ua-mobile": "?0",
+                                                "sec-ch-ua-platform": '"macOS"',
+                                                "sec-fetch-dest": "empty",
+                                                "sec-fetch-mode": "cors",
+                                                "sec-fetch-site": "same-site",
+                                                "user-agent":
+                                                  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+                                              },
+                                            }
+                                          );
 
                                           if (!response.ok) {
-                                            throw new Error('Upload failed');
+                                            throw new Error("Upload failed");
                                           }
 
-                                          const { urls } = await response.json();
+                                          const { urls } =
+                                            await response.json();
                                           if (urls && urls.length > 0) {
-                                            setEditData(prev => ({
+                                            setEditData((prev) => ({
                                               ...prev,
-                                              back_cccd: urls[0]
+                                              back_cccd: urls[0],
                                             }));
                                           } else {
-                                            throw new Error('No URL returned from server');
+                                            throw new Error(
+                                              "No URL returned from server"
+                                            );
                                           }
                                         } catch (error) {
-                                          console.error('Error uploading image:', error);
-                                          alert('Lỗi khi tải ảnh lên. Vui lòng thử lại.');
+                                          console.error(
+                                            "Error uploading image:",
+                                            error
+                                          );
+                                          alert(
+                                            "Lỗi khi tải ảnh lên. Vui lòng thử lại."
+                                          );
                                         } finally {
                                           setUploadingBack(false);
                                         }
@@ -1277,7 +1530,9 @@ function ManageCTVPageContent() {
                             src={selectedUserDetail.back_cccd}
                             alt="Mặt sau CCCD"
                             className="max-h-32 rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => setLightboxImage(selectedUserDetail.back_cccd)}
+                            onClick={() =>
+                              setLightboxImage(selectedUserDetail.back_cccd)
+                            }
                           />
                         ) : (
                           <p className="text-sm text-red-500 py-1.5 md:py-2">
@@ -1292,7 +1547,9 @@ function ManageCTVPageContent() {
 
               {/* Bank Info Section */}
               <div className="space-y-4">
-                <h4 className="text-sm font-medium text-gray-900 border-b pb-2">Thông tin ngân hàng</h4>
+                <h4 className="text-sm font-medium text-gray-900 border-b pb-2">
+                  Thông tin ngân hàng
+                </h4>
                 <div className="space-y-3">
                   <div>
                     <p className="text-xs text-gray-500">Tên chủ tài khoản</p>
@@ -1300,13 +1557,25 @@ function ManageCTVPageContent() {
                       <input
                         type="text"
                         value={editData.bank_account_name}
-                        onChange={(e) => setEditData(prev => ({ ...prev, bank_account_name: e.target.value }))}
+                        onChange={(e) =>
+                          setEditData((prev) => ({
+                            ...prev,
+                            bank_account_name: e.target.value,
+                          }))
+                        }
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900"
                         placeholder="Nhập tên chủ tài khoản"
                       />
                     ) : (
-                      <p className={`text-sm ${selectedUserDetail.bank_account_name ? "text-gray-900" : "text-red-500"}`}>
-                        {selectedUserDetail.bank_account_name || "Chưa cập nhật"}
+                      <p
+                        className={`text-sm ${
+                          selectedUserDetail.bank_account_name
+                            ? "text-gray-900"
+                            : "text-red-500"
+                        }`}
+                      >
+                        {selectedUserDetail.bank_account_name ||
+                          "Chưa cập nhật"}
                       </p>
                     )}
                   </div>
@@ -1316,12 +1585,23 @@ function ManageCTVPageContent() {
                       <input
                         type="text"
                         value={editData.bank_name}
-                        onChange={(e) => setEditData(prev => ({ ...prev, bank_name: e.target.value }))}
+                        onChange={(e) =>
+                          setEditData((prev) => ({
+                            ...prev,
+                            bank_name: e.target.value,
+                          }))
+                        }
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900"
                         placeholder="Nhập tên ngân hàng"
                       />
                     ) : (
-                      <p className={`text-sm ${selectedUserDetail.bank_name ? "text-gray-900" : "text-red-500"}`}>
+                      <p
+                        className={`text-sm ${
+                          selectedUserDetail.bank_name
+                            ? "text-gray-900"
+                            : "text-red-500"
+                        }`}
+                      >
                         {selectedUserDetail.bank_name || "Chưa cập nhật"}
                       </p>
                     )}
@@ -1332,13 +1612,25 @@ function ManageCTVPageContent() {
                       <input
                         type="text"
                         value={editData.bank_account_number}
-                        onChange={(e) => setEditData(prev => ({ ...prev, bank_account_number: e.target.value }))}
+                        onChange={(e) =>
+                          setEditData((prev) => ({
+                            ...prev,
+                            bank_account_number: e.target.value,
+                          }))
+                        }
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900"
                         placeholder="Nhập số tài khoản"
                       />
                     ) : (
-                      <p className={`text-sm ${selectedUserDetail.bank_account_number ? "text-gray-900" : "text-red-500"}`}>
-                        {selectedUserDetail.bank_account_number || "Chưa cập nhật"}
+                      <p
+                        className={`text-sm ${
+                          selectedUserDetail.bank_account_number
+                            ? "text-gray-900"
+                            : "text-red-500"
+                        }`}
+                      >
+                        {selectedUserDetail.bank_account_number ||
+                          "Chưa cập nhật"}
                       </p>
                     )}
                   </div>
@@ -1347,14 +1639,20 @@ function ManageCTVPageContent() {
 
               {/* Stats Section */}
               <div className="space-y-4 md:col-span-2">
-                <h4 className="text-sm font-medium text-gray-900 border-b pb-2">Thống kê</h4>
+                <h4 className="text-sm font-medium text-gray-900 border-b pb-2">
+                  Thống kê
+                </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-gray-50 rounded-lg p-4">
                     <p className="text-xs text-gray-500 mb-1">Số bài ghi âm</p>
-                    <p className="text-lg font-semibold text-[#2DA6A2]">{selectedUserDetail.total_recordings}</p>
+                    <p className="text-lg font-semibold text-[#2DA6A2]">
+                      {selectedUserDetail.total_recordings}
+                    </p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-xs text-gray-500 mb-1">Tổng thời lượng</p>
+                    <p className="text-xs text-gray-500 mb-1">
+                      Tổng thời lượng
+                    </p>
                     <p className="text-lg font-semibold text-[#2DA6A2]">
                       {(selectedUserDetail.total_duration / 60).toFixed(1)} phút
                     </p>
@@ -1367,7 +1665,10 @@ function ManageCTVPageContent() {
                         currency: "VND",
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
-                      }).format(((selectedUserDetail.total_duration || 0) / 60 / 20) * 100000)}
+                      }).format(
+                        ((selectedUserDetail.total_duration || 0) / 60 / 20) *
+                          100000
+                      )}
                     </p>
                   </div>
                 </div>
@@ -1379,13 +1680,17 @@ function ManageCTVPageContent() {
                   <div>
                     <p className="text-xs text-gray-500">Ngày tạo</p>
                     <p className="text-sm text-gray-900">
-                      {new Date(selectedUserDetail.created_at).toLocaleDateString("vi-VN")}
+                      {new Date(
+                        selectedUserDetail.created_at
+                      ).toLocaleDateString("vi-VN")}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Cập nhật lần cuối</p>
                     <p className="text-sm text-gray-900">
-                      {new Date(selectedUserDetail.updated_at).toLocaleDateString("vi-VN")}
+                      {new Date(
+                        selectedUserDetail.updated_at
+                      ).toLocaleDateString("vi-VN")}
                     </p>
                   </div>
                 </div>
@@ -1407,8 +1712,9 @@ function ManageCTVPageContent() {
                     <button
                       onClick={async () => {
                         try {
-                          const { error } = await supabase
-                            .rpc('update_profile_info', {
+                          const { error } = await supabase.rpc(
+                            "update_profile_info",
+                            {
                               profile_id: selectedUserDetail.id,
                               new_full_name: editData.full_name,
                               new_phone: editData.phone,
@@ -1416,21 +1722,23 @@ function ManageCTVPageContent() {
                               new_address: editData.address,
                               new_bank_account_name: editData.bank_account_name,
                               new_bank_name: editData.bank_name,
-                              new_bank_account_number: editData.bank_account_number,
+                              new_bank_account_number:
+                                editData.bank_account_number,
                               new_front_cccd: editData.front_cccd,
                               new_back_cccd: editData.back_cccd,
-                            });
+                            }
+                          );
 
                           if (error) throw error;
 
                           // Update local state
-                          setSelectedUserDetail(prev => ({
+                          setSelectedUserDetail((prev) => ({
                             ...prev,
-                            ...editData
+                            ...editData,
                           }));
-                          setCtvList(prev => 
-                            prev.map(ctv => 
-                              ctv.id === selectedUserDetail.id 
+                          setCtvList((prev) =>
+                            prev.map((ctv) =>
+                              ctv.id === selectedUserDetail.id
                                 ? { ...ctv, ...editData }
                                 : ctv
                             )
@@ -1439,7 +1747,9 @@ function ManageCTVPageContent() {
                           alert("Cập nhật thông tin thành công!");
                         } catch (error) {
                           console.error("Error updating profile:", error);
-                          alert("Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại.");
+                          alert(
+                            "Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại."
+                          );
                         }
                       }}
                       className="px-4 py-2 bg-[#2DA6A2] text-white rounded-lg hover:bg-[#2DA6A2]/90 transition-colors text-sm"
@@ -1455,9 +1765,11 @@ function ManageCTVPageContent() {
                         phone: selectedUserDetail.phone || "",
                         id_number: selectedUserDetail.id_number || "",
                         address: selectedUserDetail.address || "",
-                        bank_account_name: selectedUserDetail.bank_account_name || "",
+                        bank_account_name:
+                          selectedUserDetail.bank_account_name || "",
                         bank_name: selectedUserDetail.bank_name || "",
-                        bank_account_number: selectedUserDetail.bank_account_number || "",
+                        bank_account_number:
+                          selectedUserDetail.bank_account_number || "",
                         front_cccd: selectedUserDetail.front_cccd || "",
                         back_cccd: selectedUserDetail.back_cccd || "",
                       });
@@ -1557,7 +1869,7 @@ function ManageCTVPageContent() {
 
       {/* Lightbox Modal */}
       {lightboxImage && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[60]"
           onClick={() => setLightboxImage(null)}
         >
@@ -1572,8 +1884,19 @@ function ManageCTVPageContent() {
               onClick={() => setLightboxImage(null)}
               className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
