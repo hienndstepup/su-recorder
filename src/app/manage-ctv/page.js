@@ -509,6 +509,9 @@ function ManageCTVPageContent() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                          STT
+                        </th>
+                        <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                           Họ và tên
                         </th>
                         <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
@@ -532,8 +535,11 @@ function ManageCTVPageContent() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredCTV.map((ctv) => (
+                      {filteredCTV.map((ctv, index) => (
                         <tr key={ctv.id} className="hover:bg-gray-50">
+                          <td className="px-4 md:px-6 py-4 whitespace-nowrap text-[10px] md:text-sm text-gray-900 text-center">
+                            {index + 1}
+                          </td>
                           <td
                             className="px-6 py-4 whitespace-nowrap cursor-pointer hover:bg-gray-50 group"
                             onClick={() => {
