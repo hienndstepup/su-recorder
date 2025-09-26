@@ -69,22 +69,80 @@ export default function ManageCTVDetailPage() {
 
     setDeletingRecord(recordId);
     try {
-      const { error } = await supabase
-        .from('recordings')
-        .delete()
-        .eq('id', recordId);
+      // Sử dụng SQL function để xóa với permission checks
+      const { data, error } = await supabase
+        .rpc('delete_recording', {
+          recording_id: recordId
+        });
 
       if (error) throw error;
 
-      // Cập nhật danh sách recordings
-      setRecordings(prev => prev.filter(record => record.id !== recordId));
-      
-      alert('Xóa bản ghi thành công!');
+      if (data) {
+        // Cập nhật danh sách recordings
+        setRecordings(prev => prev.filter(record => record.id !== recordId));
+        
+        // Cập nhật lại profile data để sync thống kê (không loading)
+        await fetchCTVProfileOnly();
+      } else {
+        throw new Error('Xóa bản ghi thất bại');
+      }
     } catch (error) {
       console.error('Error deleting record:', error);
-      alert('Có lỗi xảy ra khi xóa bản ghi. Vui lòng thử lại.');
+      
+      // Hiển thị thông báo lỗi chi tiết hơn
+      let errorMessage = 'Có lỗi xảy ra khi xóa bản ghi.';
+      
+      if (error.message.includes('Permission denied')) {
+        errorMessage = 'Không có quyền xóa bản ghi này.';
+      } else if (error.message.includes('Recording not found')) {
+        errorMessage = 'Bản ghi không tồn tại.';
+      } else if (error.message.includes('User not found')) {
+        errorMessage = 'Người dùng không hợp lệ.';
+      }
+      
+      alert(errorMessage + ' Vui lòng thử lại.');
     } finally {
       setDeletingRecord(null);
+    }
+  };
+
+  // Fetch CTV profile data only (without loading)
+  const fetchCTVProfileOnly = async (ctvId = params.id) => {
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", ctvId)
+        .single();
+
+      if (profileError) throw profileError;
+      setCtv(profileData);
+    } catch (error) {
+      console.error("Error fetching CTV profile:", error);
+    }
+  };
+
+  // Fetch CTV profile data with recordings (initial load)
+  const fetchCTVData = async (ctvId = params.id) => {
+    try {
+      setLoading(true);
+      // Fetch profile data
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", ctvId)
+        .single();
+
+      if (profileError) throw profileError;
+      setCtv(profileData);
+
+      // Fetch recordings
+      await fetchRecordings(ctvId);
+    } catch (error) {
+      console.error("Error fetching CTV data:", error);
+      alert("Không thể tải thông tin CTV. Vui lòng thử lại sau.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -133,30 +191,7 @@ export default function ManageCTVDetailPage() {
     const ctvId = params.id;
     if (!ctvId) return;
 
-    const fetchCTVData = async () => {
-      try {
-        setLoading(true);
-        // Fetch profile data
-        const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", ctvId)
-          .single();
-
-        if (profileError) throw profileError;
-        setCtv(profileData);
-
-        // Fetch recordings
-        await fetchRecordings(ctvId);
-      } catch (error) {
-        console.error("Error fetching CTV data:", error);
-        alert("Không thể tải thông tin CTV. Vui lòng thử lại sau.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCTVData();
+    fetchCTVData(ctvId);
   }, [params.id]);
 
   if (loading) {
