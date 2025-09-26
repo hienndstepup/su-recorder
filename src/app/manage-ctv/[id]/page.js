@@ -308,6 +308,9 @@ export default function ManageCTVDetailPage() {
                         Audio
                       </th>
                       <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        Hành động
+                      </th>
+                      <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                         Duyệt
                       </th>
                       <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
@@ -315,9 +318,6 @@ export default function ManageCTVDetailPage() {
                       </th>
                       <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                         Tỉnh/thành phố
-                      </th>
-                      <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                        Hành động
                       </th>
                     </tr>
                   </thead>
@@ -368,6 +368,31 @@ export default function ManageCTVDetailPage() {
                                 </audio>
                               </div>
                             </div>
+                          </td>
+                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
+                            {canDeleteRecord(record.user_id) ? (
+                              <button
+                                onClick={() => handleDeleteRecord(record.id)}
+                                disabled={deletingRecord === record.id}
+                                className="inline-flex items-center px-2 py-1 border border-red-300 rounded-md text-red-700 bg-red-50 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              >
+                                {deletingRecord === record.id ? (
+                                  <>
+                                    <div className="w-3 h-3 border border-red-300 border-t-transparent rounded-full animate-spin mr-1"></div>
+                                    Đang xóa...
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Xóa
+                                  </>
+                                )}
+                              </button>
+                            ) : (
+                              <span className="text-gray-400 text-xs">Không có quyền</span>
+                            )}
                           </td>
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -425,31 +450,6 @@ export default function ManageCTVDetailPage() {
                           </td>
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                             {record.provinces?.name}
-                          </td>
-                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
-                            {canDeleteRecord(record.user_id) ? (
-                              <button
-                                onClick={() => handleDeleteRecord(record.id)}
-                                disabled={deletingRecord === record.id}
-                                className="inline-flex items-center px-2 py-1 border border-red-300 rounded-md text-red-700 bg-red-50 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                              >
-                                {deletingRecord === record.id ? (
-                                  <>
-                                    <div className="w-3 h-3 border border-red-300 border-t-transparent rounded-full animate-spin mr-1"></div>
-                                    Đang xóa...
-                                  </>
-                                ) : (
-                                  <>
-                                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                    Xóa
-                                  </>
-                                )}
-                              </button>
-                            ) : (
-                              <span className="text-gray-400 text-xs">Không có quyền</span>
-                            )}
                           </td>
                         </tr>
                       ))
