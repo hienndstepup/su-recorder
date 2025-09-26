@@ -251,14 +251,14 @@ export default function LoginPage() {
 
 
           {/* Sign up link */}
-          <div className="mt-6 text-center">
+          {/* <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Chưa có tài khoản?{' '}
               <Link href="/register" className="font-medium text-[#2DA6A2] hover:text-[#2DA6A2]/80 transition-colors">
                 Đăng ký ngay
               </Link>
             </p>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

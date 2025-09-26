@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -20,6 +20,10 @@ export default function RegisterPage() {
 
   const { signUp } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    router.push("/login");
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
