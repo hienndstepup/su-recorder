@@ -431,25 +431,27 @@ function ManageCTVPageContent() {
                 )}
               </div>
 
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white font-medium py-1.5 px-4 md:py-2 md:px-6 rounded-lg transition-colors flex items-center text-sm md:text-base w-full md:w-auto justify-center md:justify-start"
-              >
-                <svg
-                  className="w-4 h-4 md:w-5 md:h-5 mr-1.5 md:mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              {((currentUserProfile?.role === 'admin') || (user?.email === 'tragiangnt.tele@stepup.com.vn') || (user?.email === 'moht.hr@stepup.edu.vn')) && (
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white font-medium py-1.5 px-4 md:py-2 md:px-6 rounded-lg transition-colors flex items-center text-sm md:text-base w-full md:w-auto justify-center md:justify-start"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                Thêm CTV mới
-              </button>
+                  <svg
+                    className="w-4 h-4 md:w-5 md:h-5 mr-1.5 md:mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  Thêm CTV mới
+                </button>
+              )}
             </div>
 
             {/* CTV List */}
