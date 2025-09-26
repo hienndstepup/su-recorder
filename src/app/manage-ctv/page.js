@@ -720,7 +720,7 @@ function ManageCTVPageContent() {
 
       {/* Create CTV Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -942,7 +942,7 @@ function ManageCTVPageContent() {
 
       {/* User Detail Modal */}
       {isDetailModalOpen && selectedUserDetail && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[9999]">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 relative max-h-[90vh] overflow-y-auto">
             {/* Close button */}
             <button
@@ -1806,7 +1806,7 @@ function ManageCTVPageContent() {
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && selectedCTV && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[9999]">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 relative">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">
               Xác nhận xóa CTV
