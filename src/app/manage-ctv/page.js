@@ -119,6 +119,24 @@ function ManageCTVPageContent() {
   const [uploadingBack, setUploadingBack] = useState(false);
   const [lightboxImage, setLightboxImage] = useState(null);
 
+  // Gán CTV UI state (for User Detail Modal)
+  const [isAssigningCTV, setIsAssigningCTV] = useState(false);
+  const [assignCTVValue, setAssignCTVValue] = useState("");
+
+  // Copy affiliate_code tooltip state
+  const [copiedAffiliate, setCopiedAffiliate] = useState(false);
+
+  const handleCopyAffiliate = async () => {
+    try {
+      if (!selectedUserDetail?.affiliate_code) return;
+      await navigator.clipboard.writeText(selectedUserDetail.affiliate_code);
+      setCopiedAffiliate(true);
+      setTimeout(() => setCopiedAffiliate(false), 2000);
+    } catch (err) {
+      console.error('Copy failed:', err);
+    }
+  };
+
   const [ctvList, setCtvList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -1000,9 +1018,97 @@ function ManageCTVPageContent() {
                 <h3 className="text-xl font-semibold text-gray-900">
                   {selectedUserDetail.full_name || "Chưa cập nhật"}
                 </h3>
-                <p className="text-sm text-[#2DA6A2] font-medium">
-                  {selectedUserDetail.affiliate_code}
-                </p>
+                <div className="flex items-center space-x-2 mt-0.5">
+                  <p className="text-sm text-[#2DA6A2] font-medium">
+                    {selectedUserDetail.affiliate_code}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleCopyAffiliate}
+                    className="relative inline-flex items-center p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                    title="Sao chép"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M4 4a2 2 0 012-2h5a1 1 0 110 2H6v9a2 2 0 01-2 2H3a1 1 0 110-2h1V4z" />
+                      <path d="M8 8a2 2 0 012-2h5a2 2 0 012 2v8a2 2 0 01-2 2h-5a2 2 0 01-2-2V8z" />
+                    </svg>
+                    {copiedAffiliate && (
+                      <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap">
+                        Đã sao chép
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Gán CTV action */}
+                <div className="mt-2">
+                  {!isAssigningCTV ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsAssigningCTV(true)}
+                      className="inline-flex items-center px-3 py-1.5 text-xs md:text-sm rounded-md border border-[#2DA6A2] text-[#2DA6A2] hover:bg-[#2DA6A2] hover:text-white transition-colors"
+                    >
+                      Gán ctv
+                    </button>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={assignCTVValue}
+                        onChange={(e) => setAssignCTVValue(e.target.value)}
+                        placeholder="Nhập mã CTV"
+                        className="px-3 py-1.5 text-xs md:text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            if (!assignCTVValue.trim()) return;
+                            // child is selected user detail
+                            const childId = selectedUserDetail?.id;
+                            if (!childId) return;
+                            const { data, error } = await supabase.rpc(
+                              'assign_ctv_by_affiliate_code',
+                              {
+                                child_profile_id: childId,
+                                target_affiliate_code: assignCTVValue.trim(),
+                              }
+                            );
+                            if (error) throw error;
+
+                            // Update UI: update selectedUserDetail.referrer_id
+                            if (data && data.length > 0) {
+                              setSelectedUserDetail(prev => ({
+                                ...prev,
+                                referrer_id: data[0].new_referrer_id,
+                              }));
+                            }
+
+                            // Reset assign UI
+                            setIsAssigningCTV(false);
+                            setAssignCTVValue('');
+                          } catch (err) {
+                            console.error('Assign CTV failed:', err);
+                            alert('Không thể gán CTV. Vui lòng kiểm tra mã CTV và thử lại.');
+                          }
+                        }}
+                        className="px-3 py-1.5 text-xs md:text-sm bg-[#2DA6A2] text-white rounded-md hover:bg-[#2DA6A2]/90"
+                      >
+                        Gán
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAssigningCTV(false);
+                          setAssignCTVValue("");
+                        }}
+                        className="px-3 py-1.5 text-xs md:text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                      >
+                        Hủy
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

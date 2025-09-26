@@ -335,6 +335,9 @@ export default function ManageCTVDetailPage() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        STT
+                      </th>
+                      <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                         Câu hỏi
                       </th>
                       <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
@@ -361,7 +364,7 @@ export default function ManageCTVDetailPage() {
                     {loadingRecordings ? (
                       <tr>
                         <td
-                          colSpan="7"
+                          colSpan="8"
                           className="px-6 py-4 text-center text-gray-500"
                         >
                           <div className="flex items-center justify-center space-x-2">
@@ -371,8 +374,11 @@ export default function ManageCTVDetailPage() {
                         </td>
                       </tr>
                     ) : recordings.length > 0 ? (
-                      recordings.map((record) => (
+                      recordings.map((record, index) => (
                         <tr key={record.id} className="hover:bg-gray-50">
+                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                            {index + 1}
+                          </td>
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                             {record.questions?.text}
                           </td>
@@ -492,7 +498,7 @@ export default function ManageCTVDetailPage() {
                     ) : (
                       <tr>
                         <td
-                          colSpan="7"
+                          colSpan="8"
                           className="px-6 py-4 text-center text-gray-500"
                         >
                           Chưa có bài ghi âm nào
