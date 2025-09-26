@@ -6,6 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { calculatePaymentAmount } from "@/lib/index";
 
 export default function ManageCTVDetailPage() {
   const params = useParams();
@@ -274,7 +275,7 @@ export default function ManageCTVDetailPage() {
                         currency: "VND",
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
-                      }).format(((ctv.total_duration || 0) / 60 / 20) * 100000)}
+                      }).format(calculatePaymentAmount(ctv.total_duration || 0))}
                     </div>
                   </div>
                 </div>

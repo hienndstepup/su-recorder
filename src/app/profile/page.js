@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import SignaturePadComponent from "@/components/SignaturePad";
+import { calculatePaymentAmount } from "@/lib/index";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -399,8 +400,7 @@ export default function ProfilePage() {
                             minimumFractionDigits: 0,
                             maximumFractionDigits: 0,
                           }).format(
-                            ((profileData.total_duration || 0) / 60 / 20) *
-                              100000
+                            calculatePaymentAmount(profileData.total_duration || 0)
                           )}
                         </span>
                       </div>

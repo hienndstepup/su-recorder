@@ -44,3 +44,25 @@ export const normalizeText = (text) => {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/đ/g, "d");
 };
+
+// Hàm tính thành tiền dựa trên thời lượng audio (giây)
+// Công thức: 120,000 VND cho mỗi 20 phút (1200 giây)
+export const calculatePaymentAmount = (durationInSeconds) => {
+  if (!durationInSeconds || durationInSeconds <= 0) return 0;
+  
+  // Chuyển đổi giây thành phút, chia cho 20 phút, nhân với 120,000 VND
+  const paymentAmount = (durationInSeconds / 60 / 20) * 120000;
+  
+  // Làm tròn xuống số nguyên
+  return Math.floor(paymentAmount);
+};
+
+// Hàm format tiền tệ VND
+export const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};

@@ -7,7 +7,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { normalizeText } from "@/lib";
+import { normalizeText, calculatePaymentAmount } from "@/lib";
 
 // Loading component
 function LoadingState() {
@@ -478,13 +478,12 @@ function ManageCTVPageContent() {
                           minimumFractionDigits: 0,
                           maximumFractionDigits: 0,
                         }).format(
-                          (ctvList.reduce(
-                            (sum, ctv) => sum + (ctv.total_duration || 0),
-                            0
-                          ) /
-                            60 /
-                            20) *
-                            100000
+                          calculatePaymentAmount(
+                            ctvList.reduce(
+                              (sum, ctv) => sum + (ctv.total_duration || 0),
+                              0
+                            )
+                          )
                         )}
                       </div>
                     </div>
@@ -689,7 +688,7 @@ function ManageCTVPageContent() {
                               minimumFractionDigits: 0,
                               maximumFractionDigits: 0,
                             }).format(
-                              ((ctv.total_duration || 0) / 60 / 20) * 100000
+                              calculatePaymentAmount(ctv.total_duration || 0)
                             )}
                           </td>
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
@@ -1672,8 +1671,7 @@ function ManageCTVPageContent() {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       }).format(
-                        ((selectedUserDetail.total_duration || 0) / 60 / 20) *
-                          100000
+                        calculatePaymentAmount(selectedUserDetail.total_duration || 0)
                       )}
                     </p>
                   </div>

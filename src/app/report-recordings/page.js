@@ -5,6 +5,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { calculatePaymentAmount } from "@/lib/index";
 
 const ReportRecordingsPage = () => {
   const { user } = useAuth();
@@ -219,7 +220,7 @@ const ReportRecordingsPage = () => {
             total_duration: item.profiles.total_duration,
             is_pass: item.profiles.is_pass
           } : null,
-          payment_amount: ((item.audio_duration || 0) / 60.0 / 20.0) * 100000
+          payment_amount: calculatePaymentAmount(item.audio_duration || 0)
         }));
         
         allData = [...allData, ...transformedBatch];

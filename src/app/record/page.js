@@ -7,7 +7,7 @@ import GlobalMic from "../components/GlobalMic";
 import { appApi } from "@/api/app";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { getDeviceId } from "@/lib";
+import { getDeviceId, calculatePaymentAmount } from "@/lib";
 
 // Animated Number Component
 const AnimatedNumber = ({ value, duration = 1000, decimals = 0 }) => {
@@ -442,7 +442,7 @@ const RecordPage = () => {
               </div>
               <div className="text-lg md:text-2xl font-bold text-green-600">
                 <AnimatedCurrency 
-                  value={((userStats.total_duration || 0) / 60 / 20) * 100000} 
+                  value={calculatePaymentAmount(userStats.total_duration || 0)} 
                   duration={1500}
                 />
               </div>
