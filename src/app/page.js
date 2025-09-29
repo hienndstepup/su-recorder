@@ -10,6 +10,8 @@ import { useRouter } from "next/navigation";
 
 export default function Home() {
   const router = useRouter();
+  const { user } = useAuth();
+  const [currentUserProfile, setCurrentUserProfile] = useState(null);
   const [formData, setFormData] = useState({
     age: "",
     region: "",
@@ -23,6 +25,26 @@ export default function Home() {
   const [provinces, setProvinces] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [isLoadingFromStorage, setIsLoadingFromStorage] = useState(false);
+
+  // Fetch current user's profile and store in state
+  useEffect(() => {
+    const fetchCurrentUserProfile = async () => {
+      try {
+        if (!user?.id) return;
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+        if (error) throw error;
+        setCurrentUserProfile(data);
+      } catch (err) {
+        console.error("Error fetching current user profile:", err?.message || err);
+      }
+    };
+
+    fetchCurrentUserProfile();
+  }, [user]);
 
   // Load recorderInfo from localStorage after regions are loaded
   useEffect(() => {
@@ -241,6 +263,20 @@ export default function Home() {
             <p className="text-base md:text-lg text-gray-600">
               Luyện đọc và trả lời câu hỏi thú vị cho các bạn nhỏ!
             </p>
+            {currentUserProfile && (
+              <div className="mt-3 md:mt-4">
+                <span className="text-sm md:text-base text-gray-700">
+                  Trạng thái PASS test đầu vào:
+                </span>{" "}
+                <span
+                  className={`text-sm md:text-base font-semibold ${
+                    currentUserProfile.is_pass ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  {currentUserProfile.is_pass ? "Đã PASS" : "Chưa PASS"}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Form Card */}
