@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Header from "@/components/Header";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
@@ -56,6 +56,7 @@ function ManageCTVPageContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
 
   // Lấy giá trị từ URL params hoặc dùng giá trị mặc định
@@ -63,6 +64,7 @@ function ManageCTVPageContent() {
     searchParams.get("search") || ""
   );
   const [sortBy, setSortBy] = useState(searchParams.get("sort") || "all"); // "all", "most", "least"
+  const [passFilter, setPassFilter] = useState(searchParams.get("pass") || "all"); // "all", "passed", "not_passed"
 
   // Hàm cập nhật URL params
   const updateUrlParams = (params) => {
@@ -85,7 +87,8 @@ function ManageCTVPageContent() {
   const clearAllFilters = () => {
     setSearchTerm("");
     setSortBy("all");
-    router.push("", { scroll: false }); // Xóa tất cả params
+    setPassFilter("all");
+    router.push(pathname, { scroll: false }); // Xóa tất cả params trên URL
   };
 
   // Lấy thông tin profile của user hiện tại (bao gồm affiliate_code)
@@ -218,6 +221,11 @@ function ManageCTVPageContent() {
       const normalizedName = normalizeText(ctv.full_name);
       const normalizedSearch = normalizeText(searchTerm);
       return normalizedName.includes(normalizedSearch);
+    })
+    .filter((ctv) => {
+      if (passFilter === "passed") return !!ctv.is_pass;
+      if (passFilter === "not_passed") return !ctv.is_pass;
+      return true; // all
     })
     .sort((a, b) => {
       if (sortBy === "most") {
@@ -475,8 +483,28 @@ function ManageCTVPageContent() {
                   </select>
                 </div>
 
+                {/* PASS Filter */}
+                <div className="flex flex-col space-y-1">
+                  <label className="text-xs text-gray-600 font-medium">
+                    PASS
+                  </label>
+                  <select
+                    value={passFilter}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setPassFilter(value);
+                      updateUrlParams({ pass: value === "all" ? null : value });
+                    }}
+                    className="text-gray-700 px-3 md:px-4 h-9 md:h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm md:text-base bg-white w-full md:w-auto md:min-w-[140px]"
+                  >
+                    <option value="all">Tất cả</option>
+                    <option value="passed">Đã pass</option>
+                    <option value="not_passed">Chưa pass</option>
+                  </select>
+                </div>
+
                 {/* Clear Filters Button - Only show if there are active filters */}
-                {(searchTerm || sortBy !== "all") && (
+                {(searchTerm || sortBy !== "all" || passFilter !== "all") && (
                   <button
                     onClick={clearAllFilters}
                     className="inline-flex items-center px-3 py-1.5 md:px-4 md:py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm md:text-base rounded-lg transition-colors mt-4 md:mt-0"
