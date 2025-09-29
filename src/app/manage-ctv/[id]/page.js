@@ -347,6 +347,9 @@ export default function ManageCTVDetailPage() {
                         Audio
                       </th>
                       <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        Ngày tạo
+                      </th>
+                      <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                         Hành động
                       </th>
                       <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
@@ -364,7 +367,7 @@ export default function ManageCTVDetailPage() {
                     {loadingRecordings ? (
                       <tr>
                         <td
-                          colSpan="8"
+                          colSpan="9"
                           className="px-6 py-4 text-center text-gray-500"
                         >
                           <div className="flex items-center justify-center space-x-2">
@@ -410,6 +413,9 @@ export default function ManageCTVDetailPage() {
                                 </audio>
                               </div>
                             </div>
+                          </td>
+                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                            {record.recorded_at ? new Date(record.recorded_at).toLocaleDateString("vi-VN") : "-"}
                           </td>
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                             {canDeleteRecord(record.user_id) ? (
@@ -498,7 +504,7 @@ export default function ManageCTVDetailPage() {
                     ) : (
                       <tr>
                         <td
-                          colSpan="8"
+                          colSpan="9"
                           className="px-6 py-4 text-center text-gray-500"
                         >
                           Chưa có bài ghi âm nào
