@@ -34,6 +34,32 @@ export default function ProfilePage() {
   const [isSavingSignature, setIsSavingSignature] = useState(false);
   const [signatureSaved, setSignatureSaved] = useState(false);
   
+  const getExtensionFromMime = (mime) => {
+    if (!mime) return "";
+    const map = {
+      "image/jpeg": "jpg",
+      "image/jpg": "jpg",
+      "image/png": "png",
+      "image/gif": "gif",
+      "image/webp": "webp",
+      "image/bmp": "bmp",
+      "image/heic": "heic",
+      "image/heif": "heif",
+    };
+    return map[mime] || "";
+  };
+
+  const buildRenamedFile = (file) => {
+    const idPrefix = (user?.id || "user").slice(0, 6);
+    let ext = (file?.name || "").split(".").pop()?.toLowerCase();
+    if (!ext || ext === file.name?.toLowerCase()) {
+      const fromMime = getExtensionFromMime(file?.type);
+      if (fromMime) ext = fromMime;
+    }
+    const newName = `${idPrefix}_${Date.now()}${ext ? `.${ext}` : ""}`;
+    return new File([file], newName, { type: file.type });
+  };
+  
   const checkRequiredFields = (data) => {
     return !!(
       data.full_name &&
@@ -510,10 +536,12 @@ export default function ProfilePage() {
                                             className="sr-only"
                                             accept="image/*"
                                             onChange={async (e) => {
-                                              const file = e.target.files?.[0];
+                                              let file = e.target.files?.[0];
                                               if (file) {
                                                 setUploadingFront(true);
                                                 try {
+                                                  // Rename file before upload
+                                                  file = buildRenamedFile(file);
                                                   const formData = new FormData();
                                                   formData.append('files', file);
                                                   formData.append('fileTypes', file.type);
@@ -613,10 +641,12 @@ export default function ProfilePage() {
                                             className="sr-only"
                                             accept="image/*"
                                             onChange={async (e) => {
-                                              const file = e.target.files?.[0];
+                                              let file = e.target.files?.[0];
                                               if (file) {
                                                 setUploadingBack(true);
                                                 try {
+                                                  // Rename file before upload
+                                                  file = buildRenamedFile(file);
                                                   const formData = new FormData();
                                                   formData.append('files', file);
                                                   formData.append('fileTypes', file.type);
