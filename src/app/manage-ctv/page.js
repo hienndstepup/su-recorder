@@ -217,10 +217,14 @@ function ManageCTVPageContent() {
   // Filter and sort CTV list
   const filteredCTV = ctvList
     .filter((ctv) => {
-      if (!ctv.full_name || !searchTerm) return true;
-      const normalizedName = normalizeText(ctv.full_name);
+      if (!searchTerm) return true;
       const normalizedSearch = normalizeText(searchTerm);
-      return normalizedName.includes(normalizedSearch);
+      const normalizedName = normalizeText(ctv.full_name || "");
+      const emailLower = (ctv.email || "").toLowerCase();
+      return (
+        normalizedName.includes(normalizedSearch) ||
+        emailLower.includes(normalizedSearch.toLowerCase())
+      );
     })
     .filter((ctv) => {
       if (passFilter === "passed") return !!ctv.is_pass;
@@ -443,7 +447,7 @@ function ManageCTVPageContent() {
                         setSearchTerm(value);
                         updateUrlParams({ search: value || null });
                       }}
-                      placeholder="Tìm kiếm theo tên..."
+                      placeholder="Tìm theo tên hoặc email..."
                       className="text-gray-700 pl-10 pr-4 h-9 md:h-11 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-sm md:text-base w-full md:w-60"
                     />
                     <svg
