@@ -2321,14 +2321,14 @@ function ManageCTVPageContent() {
       {/* Lightbox Modal */}
       {lightboxImage && (
         <div
-          className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[60]"
+          className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[99999]"
           onClick={() => setLightboxImage(null)}
         >
-          <div className="relative max-w-4xl max-h-full">
+          <div className="relative w-[90vw] h-[90vh] max-w-4xl">
             <img
               src={lightboxImage}
               alt="Ảnh CCCD"
-              className="max-w-full max-h-full object-contain rounded-lg"
+              className="w-full h-full object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
             />
             <button
