@@ -42,6 +42,15 @@ function LoadingState() {
   );
 }
 
+// Hàm kiểm tra quyền admin
+const checkIsAdmin = (currentUserProfile, user) => {
+  return (
+    (currentUserProfile?.role === 'admin') || 
+    (user?.email === 'tragiangnt.tele@stepup.com.vn') || 
+    (user?.email === 'moht.hr@stepup.edu.vn')
+  );
+};
+
 // Main component
 function ManageCTVPageContent() {
   const { user } = useAuth();
@@ -125,6 +134,15 @@ function ManageCTVPageContent() {
 
   // Copy affiliate_code tooltip state
   const [copiedAffiliate, setCopiedAffiliate] = useState(false);
+
+  // Reset password modal state
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [selectedUserForReset, setSelectedUserForReset] = useState(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [resetPasswordErrors, setResetPasswordErrors] = useState({});
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
   const handleCopyAffiliate = async () => {
     try {
@@ -312,6 +330,56 @@ function ManageCTVPageContent() {
     setShowConfirmPassword(false);
   };
 
+  // Validation cho reset password
+  const validateResetPassword = () => {
+    const newErrors = {};
+
+    if (!newPassword) {
+      newErrors.newPassword = "Mật khẩu mới không được để trống";
+    } else if (newPassword.length < 6) {
+      newErrors.newPassword = "Mật khẩu phải có ít nhất 6 ký tự";
+    }
+
+    if (!confirmNewPassword) {
+      newErrors.confirmNewPassword = "Vui lòng nhập lại mật khẩu mới";
+    } else if (newPassword !== confirmNewPassword) {
+      newErrors.confirmNewPassword = "Mật khẩu không khớp";
+    }
+
+    setResetPasswordErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Xử lý reset password
+  const handleResetPassword = async () => {
+    if (validateResetPassword()) {
+      try {
+        // Gọi Supabase Admin API để update mật khẩu
+        const { error } = await supabaseAdmin.auth.admin.updateUserById(
+          selectedUserForReset.id,
+          { password: newPassword }
+        );
+
+        if (error) throw error;
+
+        // Reset form và đóng modal
+        setIsResetPasswordModalOpen(false);
+        setSelectedUserForReset(null);
+        setNewPassword("");
+        setConfirmNewPassword("");
+        setResetPasswordErrors({});
+        setShowNewPassword(false);
+        setShowConfirmNewPassword(false);
+
+        // Thông báo thành công
+        alert(`Reset mật khẩu thành công cho ${selectedUserForReset.full_name || selectedUserForReset.email}!`);
+      } catch (error) {
+        console.error("Error resetting password:", error.message);
+        setResetPasswordErrors({ submit: error.message });
+      }
+    }
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
@@ -431,7 +499,7 @@ function ManageCTVPageContent() {
                 )}
               </div>
 
-              {((currentUserProfile?.role === 'admin') || (user?.email === 'tragiangnt.tele@stepup.com.vn') || (user?.email === 'moht.hr@stepup.edu.vn')) && (
+              {checkIsAdmin(currentUserProfile, user) && (
                 <button
                   onClick={() => setIsCreateModalOpen(true)}
                   className="bg-[#2DA6A2] hover:bg-[#2DA6A2]/90 text-white font-medium py-1.5 px-4 md:py-2 md:px-6 rounded-lg transition-colors flex items-center text-sm md:text-base w-full md:w-auto justify-center md:justify-start"
@@ -717,15 +785,31 @@ function ManageCTVPageContent() {
                             )}
                           </td>
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm font-medium">
-                            <button
-                              onClick={() => {
-                                setSelectedCTV(ctv);
-                                setIsDeleteModalOpen(true);
-                              }}
-                              className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm"
-                            >
-                              Xóa
-                            </button>
+                            <div className="flex flex-col md:flex-row space-y-1 md:space-y-0 md:space-x-2">
+                              {checkIsAdmin(currentUserProfile, user) && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedUserForReset(ctv);
+                                    setIsResetPasswordModalOpen(true);
+                                    setNewPassword("");
+                                    setConfirmNewPassword("");
+                                    setResetPasswordErrors({});
+                                  }}
+                                  className="cursor-pointer text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm"
+                                >
+                                  Reset MK
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setSelectedCTV(ctv);
+                                  setIsDeleteModalOpen(true);
+                                }}
+                                className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 px-1.5 md:px-2 py-0.5 md:py-1 rounded transition-colors text-xs md:text-sm"
+                              >
+                                Xóa
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1974,6 +2058,229 @@ function ManageCTVPageContent() {
                   "Xóa"
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {isResetPasswordModalOpen && selectedUserForReset && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-base md:text-lg font-semibold text-gray-900">
+                Reset mật khẩu
+              </h3>
+              <button
+                onClick={() => {
+                  setIsResetPasswordModalOpen(false);
+                  setSelectedUserForReset(null);
+                  setNewPassword("");
+                  setConfirmNewPassword("");
+                  setResetPasswordErrors({});
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg
+                  className="w-5 h-5 md:w-6 md:h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              {/* User Info */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm text-gray-600 mb-1">Người dùng:</p>
+                <p className="text-base font-medium text-gray-900">
+                  {selectedUserForReset.full_name || "Chưa cập nhật"}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {selectedUserForReset.email || "Chưa có email"}
+                </p>
+              </div>
+
+              {/* New Password */}
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1.5 md:mb-2">
+                  Mật khẩu mới *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => {
+                      setNewPassword(e.target.value);
+                      if (resetPasswordErrors.newPassword) {
+                        setResetPasswordErrors(prev => ({
+                          ...prev,
+                          newPassword: ""
+                        }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 md:px-4 md:py-3 pr-10 md:pr-12 text-sm md:text-base border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900 ${
+                      resetPasswordErrors.newPassword ? "border-red-500" : "border-gray-300"
+                    }`}
+                    placeholder="Nhập mật khẩu mới"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                  >
+                    {showNewPassword ? (
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {resetPasswordErrors.newPassword && (
+                  <p className="mt-1 text-sm text-red-600">{resetPasswordErrors.newPassword}</p>
+                )}
+              </div>
+
+              {/* Confirm New Password */}
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1.5 md:mb-2">
+                  Nhập lại mật khẩu mới *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmNewPassword ? "text" : "password"}
+                    value={confirmNewPassword}
+                    onChange={(e) => {
+                      setConfirmNewPassword(e.target.value);
+                      if (resetPasswordErrors.confirmNewPassword) {
+                        setResetPasswordErrors(prev => ({
+                          ...prev,
+                          confirmNewPassword: ""
+                        }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 md:px-4 md:py-3 pr-10 md:pr-12 text-sm md:text-base border rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900 ${
+                      resetPasswordErrors.confirmNewPassword ? "border-red-500" : "border-gray-300"
+                    }`}
+                    placeholder="Nhập lại mật khẩu mới"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmNewPassword ? (
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {resetPasswordErrors.confirmNewPassword && (
+                  <p className="mt-1 text-sm text-red-600">{resetPasswordErrors.confirmNewPassword}</p>
+                )}
+              </div>
+
+              {/* Error Message */}
+              {resetPasswordErrors.submit && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm text-red-600">{resetPasswordErrors.submit}</p>
+                </div>
+              )}
+
+              {/* Modal Footer */}
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsResetPasswordModalOpen(false);
+                    setSelectedUserForReset(null);
+                    setNewPassword("");
+                    setConfirmNewPassword("");
+                    setResetPasswordErrors({});
+                  }}
+                  className="flex-1 px-3 py-1.5 md:px-4 md:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm md:text-base"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  className="flex-1 px-3 py-1.5 md:px-4 md:py-2 bg-[#2DA6A2] text-white rounded-lg hover:bg-[#2DA6A2]/90 transition-colors text-sm md:text-base"
+                >
+                  Reset mật khẩu
+                </button>
+              </div>
             </div>
           </div>
         </div>
