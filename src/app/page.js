@@ -12,6 +12,7 @@ export default function Home() {
   const router = useRouter();
   const { user } = useAuth();
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
+  const [showGuideModal, setShowGuideModal] = useState(false);
   const [formData, setFormData] = useState({
     age: "",
     region: "",
@@ -38,6 +39,10 @@ export default function Home() {
           .single();
         if (error) throw error;
         setCurrentUserProfile(data);
+        // Auto open guide modal if user hasn't passed
+        if (data && data.is_pass === false) {
+          setShowGuideModal(true);
+        }
       } catch (err) {
         console.error("Error fetching current user profile:", err?.message || err);
       }
@@ -512,6 +517,42 @@ export default function Home() {
           </div>
         </div>
       </div>
+      {/* Guide Modal for users not passed */}
+      {showGuideModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9999]">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 relative">
+            <button
+              onClick={() => setShowGuideModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              aria-label="Đóng"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-3">Hướng dẫn thu âm</h3>
+            <p className="text-sm md:text-base text-gray-600 mb-5">Để thu âm được chất lượng, vui lòng xem hướng dẫn thu âm trước khi thực hiện.</p>
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={() => {
+                  window.open('/huong-dan-thu-am.pdf', '_blank');
+                }}
+                className="flex-1 whitespace-nowrap px-4 py-2 bg-[#2DA6A2] text-white rounded-lg hover:bg-[#2DA6A2]/90 transition-colors text-sm md:text-base"
+              >
+                Hướng dẫn thu âm
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowGuideModal(false)}
+                className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm md:text-base whitespace-nowrap"
+              >
+                Bỏ qua
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </ProtectedRoute>
   );
 }
