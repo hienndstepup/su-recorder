@@ -531,7 +531,7 @@ export default function Home() {
               </svg>
             </button>
             <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-3">Hướng dẫn thu âm</h3>
-            <p className="text-sm md:text-base text-gray-600 mb-5">Để thu âm được chất lượng, vui lòng xem hướng dẫn thu âm trước khi thực hiện.</p>
+            <p className="text-sm md:text-base text-gray-600 mb-5">Để đảm bảo chất lượng thu âm, Phụ huynh vui lòng đọc kỹ NGUYÊN TẮC THU ÂM trước khi thực hiện.</p>
             <div className="flex space-x-3">
               <button
                 type="button"
