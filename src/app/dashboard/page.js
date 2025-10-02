@@ -324,6 +324,9 @@ export default function DashboardPage() {
                       <p className="text-2xl font-bold text-gray-900">
                         {formatDuration(reportData.reduce((sum, item) => sum + parseInt(item.total_duration), 0))}
                       </p>
+                      <p className="text-xs text-gray-500">
+                        ({reportData.reduce((sum, item) => sum + parseInt(item.total_duration), 0)} giây)
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -404,13 +407,23 @@ export default function DashboardPage() {
                             {item.total_recordings}
                           </td>
                           <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatDuration(parseInt(item.total_duration))}
+                            <div>
+                              {formatDuration(parseInt(item.total_duration))}
+                              <div className="text-xs text-gray-500">
+                                ({parseInt(item.total_duration)} giây)
+                              </div>
+                            </div>
                           </td>
                           <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {formatCurrency(parseFloat(item.total_payment))}
                           </td>
                           <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatDuration(Math.round(parseFloat(item.avg_duration)))}
+                            <div>
+                              {formatDuration(Math.round(parseFloat(item.avg_duration)))}
+                              <div className="text-xs text-gray-500">
+                                ({Math.round(parseFloat(item.avg_duration))} giây)
+                              </div>
+                            </div>
                           </td>
                           <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {item.unique_users}

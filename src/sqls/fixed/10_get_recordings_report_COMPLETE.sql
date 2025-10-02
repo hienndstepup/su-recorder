@@ -68,7 +68,7 @@ BEGIN
     DATE_TRUNC(date_trunc_format, r.recorded_at)::DATE as period_date,
     COUNT(*) as total_recordings,
     COALESCE(SUM(r.audio_duration), 0)::BIGINT as total_duration,
-    COALESCE(SUM(((r.audio_duration::NUMERIC / 60.0) / 20.0) * 100000), 0) as total_payment,
+    COALESCE(SUM(r.audio_duration::NUMERIC * 100), 0) as total_payment,
     COALESCE(AVG(r.audio_duration), 0) as avg_duration,
     COUNT(DISTINCT r.user_id) as unique_users
   FROM 
@@ -150,7 +150,7 @@ BEGIN
     r.age::BIGINT,
     q.text as question_text,
     p.name as province_name,
-    ((r.audio_duration::NUMERIC / 60.0) / 20.0) * 100000 as payment_amount,
+    (r.audio_duration::NUMERIC * 100) as payment_amount,
     COALESCE(r.is_pass, false) as is_pass
   FROM 
     public.recordings r
