@@ -8,6 +8,7 @@ import { appApi } from "@/api/app";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { getDeviceId, calculatePaymentAmount } from "@/lib";
+import { datadogUtils } from "../components/TrackingDatadog";
 
 // Animated Number Component
 const AnimatedNumber = ({ value, duration = 1000, decimals = 0 }) => {
@@ -99,6 +100,7 @@ const AnimatedCurrency = ({ value, duration = 1000 }) => {
 const RecordPage = () => {
   const router = useRouter();
   const { user } = useAuth();
+  
   const [userStats, setUserStats] = useState({
     total_recordings: 0,
     total_duration: 0,
@@ -109,6 +111,11 @@ const RecordPage = () => {
   const fetchUserStats = async () => {
     if (!user) return;
     try {
+      datadogUtils.trackEvent('fetch_user_stats_started', {
+        user_id: user.id,
+        page: 'record'
+      });
+      
       const { data, error } = await supabase
         .from("profiles")
         .select("total_recordings, total_duration")
@@ -116,9 +123,21 @@ const RecordPage = () => {
         .single();
 
       if (error) throw error;
+      
       setUserStats(data);
+      
+      datadogUtils.trackEvent('fetch_user_stats_success', {
+        user_id: user.id,
+        total_recordings: data.total_recordings,
+        total_duration: data.total_duration
+      });
     } catch (error) {
       console.error("Error fetching user stats:", error);
+      datadogUtils.trackError(error, {
+        context: 'fetch_user_stats',
+        user_id: user?.id,
+        page: 'record'
+      });
     }
   };
 
@@ -126,6 +145,11 @@ const RecordPage = () => {
   const createSession = async () => {
     if (!user) return null;
     try {
+      datadogUtils.trackEvent('create_session_started', {
+        user_id: user.id,
+        page: 'record'
+      });
+      
       const { data, error } = await supabase
         .from("sessions")
         .insert({ user_id: user.id })
@@ -133,10 +157,21 @@ const RecordPage = () => {
         .single();
 
       if (error) throw error;
+      
       console.log("Session created:", data);
+      
+      datadogUtils.trackEvent('create_session_success', {
+        user_id: user.id,
+        session_id: data.id
+      });
+      
       return data;
     } catch (error) {
       console.error("Error creating session:", error);
+      datadogUtils.trackError(error, {
+        context: 'create_session',
+        user_id: user?.id
+      });
       return null;
     }
   };
@@ -174,16 +209,38 @@ const RecordPage = () => {
 
     // Kiểm tra các trường bắt buộc
     if (!recorderInfo.age || !recorderInfo.province || !recorderInfo.region) {
+      datadogUtils.trackEvent('recorder_info_missing', {
+        user_id: user?.id,
+        missing_fields: {
+          age: !recorderInfo.age,
+          province: !recorderInfo.province,
+          region: !recorderInfo.region
+        }
+      });
+      
       alert("Vui lòng cung cấp đầy đủ thông tin trước khi ghi âm.");
       router.push("/");
       return;
     }
-  }, [router]);
+    
+    datadogUtils.trackEvent('record_page_loaded', {
+      user_id: user?.id,
+      recorder_info: {
+        age: recorderInfo.age,
+        province: recorderInfo.province,
+        region: recorderInfo.region
+      }
+    });
+  }, [router, user]);
 
   // Fetch random questions khi component mount
   useEffect(() => {
     const fetchRandomQuestions = async () => {
       try {
+        datadogUtils.trackEvent('fetch_questions_started', {
+          user_id: user?.id
+        });
+        
         // Lấy age từ localStorage
         const recorderInfo = JSON.parse(localStorage.getItem("recorderInfo") || "{}");
         const userAge = parseInt(recorderInfo.age) || 0;
@@ -195,17 +252,30 @@ const RecordPage = () => {
         });
 
         if (error) throw error;
+        
         setQuestions(data || []);
+        
+        datadogUtils.trackEvent('fetch_questions_success', {
+          user_id: user?.id,
+          user_age: userAge,
+          questions_count: data?.length || 0
+        });
       } catch (error) {
         console.error("Error fetching questions:", error.message);
         alert("Không thể tải câu hỏi. Vui lòng thử lại sau.");
+        
+        datadogUtils.trackError(error, {
+          context: 'fetch_questions',
+          user_id: user?.id,
+          error_message: error.message
+        });
       } finally {
         setIsLoadingQuestions(false);
       }
     };
 
     fetchRandomQuestions();
-  }, []);
+  }, [user]);
 
   // State để lưu kết quả ASR
   const [asrResult, setAsrResult] = useState(null);
@@ -225,6 +295,17 @@ const RecordPage = () => {
     // Reset hasPlayedAudio khi chuyển câu
     setHasPlayedAudio(false);
 
+    // Track question navigation
+    if (questions[currentQuestionIndex]) {
+      datadogUtils.trackEvent('question_viewed', {
+        user_id: user?.id,
+        question_id: questions[currentQuestionIndex].id,
+        question_index: currentQuestionIndex,
+        question_type: questions[currentQuestionIndex].type,
+        has_audio: !!questions[currentQuestionIndex].audio_url
+      });
+    }
+
     // Tự động phát audio nếu có
     if (questions[currentQuestionIndex]?.audio_url) {
       const audio = new Audio(
@@ -234,12 +315,22 @@ const RecordPage = () => {
         .play()
         .then(() => {
           setHasPlayedAudio(true);
+          datadogUtils.trackEvent('question_audio_played', {
+            user_id: user?.id,
+            question_id: questions[currentQuestionIndex].id,
+            auto_played: true
+          });
         })
         .catch((error) => {
           console.error("Error playing question audio:", error);
+          datadogUtils.trackError(error, {
+            context: 'question_audio_autoplay',
+            user_id: user?.id,
+            question_id: questions[currentQuestionIndex]?.id
+          });
         });
     }
-  }, [currentQuestionIndex]);
+  }, [currentQuestionIndex, user]);
 
   // Effect để kiểm tra và retry khi asrResult thay đổi
   useEffect(() => {
@@ -287,6 +378,14 @@ const RecordPage = () => {
 
   const handleMicStart = () => {
     console.log("Bắt đầu ghi âm");
+    
+    datadogUtils.trackEvent('recording_started', {
+      user_id: user?.id,
+      question_id: questions[currentQuestionIndex]?.id,
+      question_index: currentQuestionIndex,
+      session_id: currentSession?.id
+    });
+    
     // Reset kết quả khi bắt đầu ghi âm mới
     setAsrResult(null);
     setIsAudioReady(false);
@@ -295,7 +394,17 @@ const RecordPage = () => {
   const handleAfterRecord = async (blob) => {
     setIsProcessing(true);
     setIsLoadingAudio(true);
+    
+    const startTime = Date.now();
+    
     try {
+      datadogUtils.trackEvent('audio_processing_started', {
+        user_id: user?.id,
+        question_id: questions[currentQuestionIndex]?.id,
+        blob_size: blob.size,
+        session_id: currentSession?.id
+      });
+      
       // Tạo form data và gửi lên ASR service
       const formData = new FormData();
 
@@ -323,6 +432,17 @@ const RecordPage = () => {
       setAudioDuration(0);
 
       console.log("handleAfterRecord", result);
+      
+      const processingTime = Date.now() - startTime;
+      
+      datadogUtils.trackEvent('audio_processing_completed', {
+        user_id: user?.id,
+        question_id: questions[currentQuestionIndex]?.id,
+        processing_time: processingTime,
+        text_length: result.audio_script?.length || 0,
+        has_audio_url: !!result.audio_url,
+        session_id: currentSession?.id
+      });
 
       // Reset retry count
       setRetryCount(0);
@@ -371,6 +491,14 @@ const RecordPage = () => {
     } catch (error) {
       console.error("Error processing audio:", error);
       alert("Có lỗi xảy ra khi xử lý âm thanh. Vui lòng thử lại.");
+      
+      datadogUtils.trackError(error, {
+        context: 'audio_processing',
+        user_id: user?.id,
+        question_id: questions[currentQuestionIndex]?.id,
+        session_id: currentSession?.id,
+        blob_size: blob?.size
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -493,6 +621,13 @@ const RecordPage = () => {
                             questions[currentQuestionIndex].audio_url
                           }?t=${Date.now()}`
                         );
+                        
+                        datadogUtils.trackEvent('question_audio_replay', {
+                          user_id: user?.id,
+                          question_id: questions[currentQuestionIndex].id,
+                          question_index: currentQuestionIndex
+                        });
+                        
                         audio
                           .play()
                           .then(() => {
@@ -503,6 +638,11 @@ const RecordPage = () => {
                               "Error playing question audio:",
                               error
                             );
+                            datadogUtils.trackError(error, {
+                              context: 'question_audio_replay',
+                              user_id: user?.id,
+                              question_id: questions[currentQuestionIndex]?.id
+                            });
                           });
                       }}
                       className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -632,9 +772,26 @@ const RecordPage = () => {
                 onClick={async () => {
                   try {
                     setIsSaving(true);
+                    
+                    datadogUtils.trackEvent('save_recording_started', {
+                      user_id: user?.id,
+                      question_id: questions[currentQuestionIndex]?.id,
+                      question_index: currentQuestionIndex,
+                      session_id: currentSession?.id,
+                      audio_duration: audioDuration,
+                      is_last_question: currentQuestionIndex === questions.length - 1
+                    });
+                    
                     if (!asrResult?.audio_url) {
                       alert("Vui lòng thu âm câu trả lời trước khi tiếp tục.");
                       setIsSaving(false);
+                      
+                      datadogUtils.trackEvent('save_recording_failed', {
+                        user_id: user?.id,
+                        reason: 'no_audio_url',
+                        question_id: questions[currentQuestionIndex]?.id
+                      });
+                      
                       return;
                     }
 
@@ -642,6 +799,13 @@ const RecordPage = () => {
                     if (!currentSession) {
                       alert("Session chưa được khởi tạo. Vui lòng thử lại.");
                       setIsSaving(false);
+                      
+                      datadogUtils.trackEvent('save_recording_failed', {
+                        user_id: user?.id,
+                        reason: 'no_session',
+                        question_id: questions[currentQuestionIndex]?.id
+                      });
+                      
                       return;
                     }
 
@@ -656,6 +820,13 @@ const RecordPage = () => {
                         "Không tìm thấy thông tin tỉnh/thành phố. Vui lòng quay lại trang chủ."
                       );
                       setIsSaving(false);
+                      
+                      datadogUtils.trackEvent('save_recording_failed', {
+                        user_id: user?.id,
+                        reason: 'no_province_id',
+                        question_id: questions[currentQuestionIndex]?.id
+                      });
+                      
                       return;
                     }
 
@@ -675,12 +846,30 @@ const RecordPage = () => {
                       });
 
                     if (recordingError) throw recordingError;
+                    
+                    datadogUtils.trackEvent('recording_saved_success', {
+                      user_id: user.id,
+                      question_id: questions[currentQuestionIndex].id,
+                      question_index: currentQuestionIndex,
+                      session_id: currentSession?.id,
+                      audio_duration: audioDuration,
+                      text_length: asrResult.audio_script?.length || 0,
+                      province_id: provinceId,
+                      age: recorderInfo.age
+                    });
 
                     // Cập nhật lại thống kê
                     await fetchUserStats();
 
                     // Nếu là câu cuối cùng
                     if (currentQuestionIndex === questions.length - 1) {
+                      datadogUtils.trackEvent('recording_session_completed', {
+                        user_id: user.id,
+                        session_id: currentSession?.id,
+                        total_questions: questions.length,
+                        total_recordings: userStats.total_recordings + 1
+                      });
+                      
                       alert("Chúc mừng bạn đã hoàn thành bài thu âm!");
                       router.push("/");
                       setIsSaving(false);
@@ -688,6 +877,13 @@ const RecordPage = () => {
                     }
 
                     // Chuyển sang câu tiếp theo
+                    datadogUtils.trackEvent('question_navigation', {
+                      user_id: user.id,
+                      from_question_index: currentQuestionIndex,
+                      to_question_index: currentQuestionIndex + 1,
+                      session_id: currentSession?.id
+                    });
+                    
                     setCurrentQuestionIndex(currentQuestionIndex + 1);
                     setAsrResult(null); // Reset kết quả ASR khi chuyển câu
                     setIsAudioReady(false); // Reset audio ready state
@@ -697,6 +893,15 @@ const RecordPage = () => {
                     alert(
                       "Có lỗi xảy ra khi lưu bài thu âm. Vui lòng thử lại."
                     );
+                    
+                    datadogUtils.trackError(error, {
+                      context: 'save_recording',
+                      user_id: user?.id,
+                      question_id: questions[currentQuestionIndex]?.id,
+                      session_id: currentSession?.id,
+                      question_index: currentQuestionIndex
+                    });
+                    
                     setIsSaving(false);
                   }
                 }}

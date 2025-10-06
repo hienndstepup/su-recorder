@@ -8,6 +8,9 @@
     "start": "next start"
   },
   "dependencies": {
+    "@datadog/browser-logs": "^6.21.2",
+    "@datadog/browser-rum": "^6.21.2",
+    "@datadog/browser-rum-react": "^6.21.2",
     "@supabase/supabase-js": "^2.57.4",
     "axios": "^1.12.2",
     "howler": "^2.2.4",
