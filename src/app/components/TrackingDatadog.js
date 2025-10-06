@@ -15,6 +15,9 @@ const TrackingDatadog = () => {
     // Initialize Datadog RUM and Logs only on client side
     if (typeof window !== 'undefined') {
       initializeDatadog();
+      
+      // Make datadogUtils available globally cho AuthContext
+      window.datadogUtils = datadogUtils;
     }
   }, []);
 
@@ -138,6 +141,40 @@ const TrackingDatadog = () => {
 
 // Export utility functions for custom tracking
 export const datadogUtils = {
+  // Clear user context and stop session (for logout)
+  clearUserAndStopSession: () => {
+    if (typeof window !== 'undefined' && datadogRum.getInitConfiguration()) {
+      try {
+        // Log before clearing
+        if (datadogLogs.getInitConfiguration()) {
+          datadogLogs.logger.info('Clearing user context and stopping session', {
+            timestamp: new Date().toISOString(),
+            action: 'logout'
+          });
+        }
+
+        // Remove user context từ Datadog RUM
+        if (typeof datadogRum.removeUser === 'function') {
+          datadogRum.removeUser();
+        } else if (typeof datadogRum.clearUser === 'function') {
+          datadogRum.clearUser();
+        } else {
+          // Fallback for older versions
+          datadogRum.setUser({});
+        }
+
+        // Stop current session để kết thúc session hiện tại
+        if (typeof datadogRum.stopSession === 'function') {
+          datadogRum.stopSession();
+        }
+
+        console.log('Datadog user removed and session stopped');
+      } catch (error) {
+        console.error('Error clearing user context and stopping session:', error);
+      }
+    }
+  },
+
   // Track custom events
   trackEvent: (name, properties = {}) => {
     if (typeof window !== 'undefined' && datadogRum.getInitConfiguration()) {

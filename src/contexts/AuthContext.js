@@ -124,6 +124,11 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
 
+      // Clear Datadog user context and stop session khi đăng xuất
+      if (typeof window !== 'undefined' && window.datadogUtils) {
+        window.datadogUtils.clearUserAndStopSession();
+      }
+
       // Thử signOut với scope local trước
       const { error } = await supabase.auth.signOut({ scope: "local" });
 
