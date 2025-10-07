@@ -19,6 +19,19 @@ export default function ManageCTVDetailPage() {
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
   const [deletingRecord, setDeletingRecord] = useState(null);
 
+  // Client-side incremental display
+  const [visibleCount, setVisibleCount] = useState(100);
+
+  // Date range filters (default to today)
+  const [startDate, setStartDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
+
   // Fetch current user profile để kiểm tra role và referrals
   useEffect(() => {
     const fetchCurrentUserProfile = async () => {
@@ -150,8 +163,21 @@ export default function ManageCTVDetailPage() {
   const fetchRecordings = async (ctvId) => {
     try {
       setLoadingRecordings(true);
-      const { data, error } = await supabase
-        .from("recordings")
+      // Reset incremental view at fetch start
+      setVisibleCount(100);
+      // Build datetime range from selected dates
+      const startDateTime = `${startDate}T00:00:00.000Z`;
+      const endDateTime = `${endDate}T23:59:59.999Z`;
+
+      // PostgREST cap is typically 1000 rows per page
+      const pageSize = 1000;
+      let offset = 0;
+      let allRows = [];
+
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data: rows, error } = await supabase
+          .from("recordings")
           .select(
             `
             id,
@@ -173,12 +199,26 @@ export default function ManageCTVDetailPage() {
               code
             )
           `
-        )
-        .eq("user_id", ctvId)
-        .order("recorded_at", { ascending: false });
+          )
+          .eq("user_id", ctvId)
+          .gte('recorded_at', startDateTime)
+          .lte('recorded_at', endDateTime)
+          .order("recorded_at", { ascending: false })
+          .range(offset, offset + pageSize - 1);
 
-      if (error) throw error;
-      setRecordings(data || []);
+        if (error) throw error;
+        const batch = rows || [];
+        allRows = allRows.concat(batch);
+
+        // If returned less than the page size, we've reached the end
+        if (batch.length < pageSize) break;
+        // Advance by actual batch size to avoid gaps under server caps
+        offset += batch.length;
+      }
+
+      setRecordings(allRows);
+      // Ensure initial visible count is not more than total
+      setVisibleCount(Math.min(100, allRows.length));
     } catch (error) {
       console.error("Error fetching recordings:", error);
       alert("Không thể tải danh sách bài ghi âm. Vui lòng thử lại sau.");
@@ -328,6 +368,57 @@ export default function ManageCTVDetailPage() {
                     * Lưu ý: Số giây hiển thị trên cột AUDIO đã được làm tròn
                   </p>
                 </div>
+
+                {/* Date range filters */}
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                  <div>
+                    <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Từ ngày</label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full px-3 py-2 text-base md:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full px-3 py-2 text-base md:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-black"
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <button
+                      onClick={() => fetchRecordings(ctv.id)}
+                      disabled={loadingRecordings}
+                      className="w-full md:w-auto inline-flex items-center justify-center px-4 py-2 bg-[#2DA6A2] text-white rounded-lg hover:bg-[#2DA6A2]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
+                    >
+                      {loadingRecordings ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                          Đang tải...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                          Tải dữ liệu
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+ 
+                {/* Results summary */}
+                <div className="mt-3 md:mt-4">
+                  <span className="text-sm md:text-base text-gray-700">Kết quả:</span>{' '}
+                  <span className="text-sm md:text-base font-semibold text-[#2DA6A2]">
+                    {recordings.length} bản ghi
+                  </span>
+                </div>
               </div>
 
               <div className="overflow-x-auto">
@@ -377,7 +468,7 @@ export default function ManageCTVDetailPage() {
                         </td>
                       </tr>
                     ) : recordings.length > 0 ? (
-                      recordings.map((record, index) => (
+                      recordings.slice(0, visibleCount).map((record, index) => (
                         <tr key={record.id} className="hover:bg-gray-50">
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                             {index + 1}
@@ -514,6 +605,18 @@ export default function ManageCTVDetailPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Load more button */}
+              {recordings.length > visibleCount && (
+                <div className="px-6 py-4 border-t border-gray-200 flex justify-center">
+                  <button
+                    onClick={() => setVisibleCount(prev => Math.min(prev + 100, recordings.length))}
+                    className="inline-flex items-center px-4 py-2 bg-[#2DA6A2] text-white rounded-lg hover:bg-[#2DA6A2]/90 transition-colors min-h-[44px]"
+                  >
+                    Tải thêm 100 bản ghi
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
