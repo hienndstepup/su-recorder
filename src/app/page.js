@@ -7,10 +7,19 @@ import Header from "@/components/Header";
 import { supabase } from "@/lib/supabase";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useUserOnline } from "@/app/components/CheckUserOnline";
+
+// Hàm kiểm tra quyền admin
+const checkIsAdmin = (currentUserProfile, user) => {
+  return (
+    (currentUserProfile?.role === 'admin')
+  );
+};
 
 export default function Home() {
   const router = useRouter();
   const { user } = useAuth();
+  const { onlineUsers, isLoading: isLoadingOnlineUsers } = useUserOnline();
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -269,17 +278,40 @@ export default function Home() {
               Luyện đọc và trả lời câu hỏi thú vị cho các bạn nhỏ!
             </p>
             {currentUserProfile && (
-              <div className="mt-3 md:mt-4">
-                <span className="text-sm md:text-base text-gray-700">
-                  Trạng thái PASS test đầu vào:
-                </span>{" "}
-                <span
-                  className={`text-sm md:text-base font-semibold ${
-                    currentUserProfile.is_pass ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {currentUserProfile.is_pass ? "Đã PASS" : "Chưa PASS"}
-                </span>
+              <div className="mt-3 md:mt-4 space-y-2">
+                <div>
+                  <span className="text-sm md:text-base text-gray-700">
+                    Trạng thái PASS test đầu vào:
+                  </span>{" "}
+                  <span
+                    className={`text-sm md:text-base font-semibold ${
+                      currentUserProfile.is_pass ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {currentUserProfile.is_pass ? "Đã PASS" : "Chưa PASS"}
+                  </span>
+                </div>
+                
+                {/* Hiển thị số lượng user online chỉ cho admin */}
+                {checkIsAdmin(currentUserProfile, user) && (
+                  <div className="flex items-center justify-center">
+                    <div className="bg-[#2DA6A2]/10 border border-[#2DA6A2]/20 rounded-lg px-3 py-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-sm md:text-base text-[#2DA6A2] font-medium">
+                          {isLoadingOnlineUsers ? (
+                            <span className="flex items-center">
+                              <div className="w-3 h-3 border border-[#2DA6A2] border-t-transparent rounded-full animate-spin mr-2"></div>
+                              Đang tải...
+                            </span>
+                          ) : (
+                            `${onlineUsers} người đang online`
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
