@@ -19,6 +19,16 @@ const ReportRecordingsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("recorded_at");
   const [sortOrder, setSortOrder] = useState("desc");
+  
+  // Date range states
+  const [startDate, setStartDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+  });
+  const [endDate, setEndDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+  });
 
   // Copy to clipboard function
   const copyToClipboard = async (text, fieldId) => {
@@ -110,131 +120,94 @@ const ReportRecordingsPage = () => {
     );
   };
 
-  // Fetch recordings data with pagination to get ALL records
+  // Fetch recordings data by date range
   const fetchRecordingsData = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      setLoadingProgress({ current: 0, total: 1, message: 'Đang đếm tổng số bản ghi...' });
+      setLoadingProgress({ current: 0, total: 0, message: 'Đang tải dữ liệu theo ngày...' });
       
-      // First, get the total count
-      const { count, error: countError } = await supabase
-        .from('recordings')
-        .select('*', { count: 'exact', head: true });
+      // Convert dates to proper format for database query
+      const startDateTime = `${startDate}T00:00:00.000Z`;
+      const endDateTime = `${endDate}T23:59:59.999Z`;
       
-      if (countError) {
-        throw countError;
+      console.log('Querying recordings from:', startDateTime, 'to:', endDateTime);
+      
+      const pageSize = 10000;
+      let offset = 0;
+      let pageIndex = 0;
+      let allRows = [];
+      
+      // Auto paginate using RPC
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        pageIndex += 1;
+        setLoadingProgress({ current: pageIndex, total: 0, message: `Đang tải trang ${pageIndex} (từ bản ghi ${offset + 1})...` });
+        
+        const { data: pageData, error } = await supabase.rpc('get_recordings_by_date', {
+          p_start: startDateTime,
+          p_end: endDateTime,
+          p_limit: pageSize,
+          p_offset: offset,
+        });
+        
+        if (error) throw error;
+        const rows = Array.isArray(pageData) ? pageData : [];
+        allRows = allRows.concat(rows);
+        
+        // Stop if this page returned less than pageSize
+        if (rows.length < pageSize) break;
+        offset += pageSize;
       }
       
-      const totalCount = count || 0;
-      console.log('Total recordings in database:', totalCount);
+      console.log('Total recordings loaded:', allRows.length);
       
-      if (totalCount === 0) {
+      if (allRows.length === 0) {
         setRecordingsData([]);
-        setLoadingProgress({ 
-          current: 1, 
-          total: 1, 
-          message: 'Không có dữ liệu nào' 
-        });
+        setLoadingProgress({ current: 1, total: 1, message: `Không có dữ liệu nào trong khoảng thời gian ${startDate} đến ${endDate}` });
         return;
       }
       
-      // Calculate how many batches we need (1000 records per batch)
-      const batchSize = 1000;
-      const totalBatches = Math.ceil(totalCount / batchSize);
-      let allData = [];
+      // Transform the data
+      const transformedData = allRows.map((item) => ({
+        id: item.id,
+        session_id: item.session_id,
+        user_id: item.user_id,
+        audio_url: item.audio_url,
+        audio_duration: item.audio_duration,
+        audio_script: item.audio_script,
+        recorded_at: item.recorded_at,
+        age: item.age,
+        question_data: item.questions
+          ? {
+              id: item.questions.id,
+              text: item.questions.text,
+              type: item.questions.type,
+              hint: item.questions.hint,
+            }
+          : null,
+        province_data: item.provinces
+          ? {
+              id: item.provinces.id,
+              name: item.provinces.name,
+              code: item.provinces.code,
+            }
+          : null,
+        user_data: item.profiles
+          ? {
+              full_name: item.profiles.full_name,
+              affiliate_code: item.profiles.affiliate_code,
+              total_recordings: item.profiles.total_recordings,
+              total_duration: item.profiles.total_duration,
+              is_pass: item.profiles.is_pass,
+            }
+          : null,
+        payment_amount: calculatePaymentAmount(item.audio_duration || 0),
+      }));
       
-      setLoadingProgress({ 
-        current: 0, 
-        total: totalBatches, 
-        message: `Đang tải ${totalCount} bản ghi trong ${totalBatches} batches...` 
-      });
-      
-      // Fetch data in batches
-      for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
-        const startRange = batchIndex * batchSize;
-        const endRange = Math.min(startRange + batchSize - 1, totalCount - 1);
-        
-        setLoadingProgress({ 
-          current: batchIndex + 1, 
-          total: totalBatches, 
-          message: `Đang tải batch ${batchIndex + 1}/${totalBatches} (${startRange + 1}-${endRange + 1})...` 
-        });
-        
-        const { data: batchData, error: batchError } = await supabase
-          .from('recordings')
-          .select(`
-            *,
-            questions:question_id (
-              id,
-              text,
-              type,
-              hint
-            ),
-            provinces:province_id (
-              id,
-              name,
-              code
-            ),
-            profiles:user_id (
-              full_name,
-              affiliate_code,
-              total_recordings,
-              total_duration,
-              is_pass
-            )
-          `)
-          .order('recorded_at', { ascending: false })
-          .range(startRange, endRange);
-        
-        if (batchError) {
-          throw batchError;
-        }
-        
-        // Transform the batch data
-        const transformedBatch = (batchData || []).map(item => ({
-          id: item.id,
-          session_id: item.session_id,
-          user_id: item.user_id,
-          audio_url: item.audio_url,
-          audio_duration: item.audio_duration,
-          audio_script: item.audio_script,
-          recorded_at: item.recorded_at,
-          age: item.age,
-          question_data: item.questions ? {
-            id: item.questions.id,
-            text: item.questions.text,
-            type: item.questions.type,
-            hint: item.questions.hint
-          } : null,
-          province_data: item.provinces ? {
-            id: item.provinces.id,
-            name: item.provinces.name,
-            code: item.provinces.code
-          } : null,
-          user_data: item.profiles ? {
-            full_name: item.profiles.full_name,
-            affiliate_code: item.profiles.affiliate_code,
-            total_recordings: item.profiles.total_recordings,
-            total_duration: item.profiles.total_duration,
-            is_pass: item.profiles.is_pass
-          } : null,
-          payment_amount: calculatePaymentAmount(item.audio_duration || 0)
-        }));
-        
-        allData = [...allData, ...transformedBatch];
-        console.log(`Batch ${batchIndex + 1}/${totalBatches}: ${transformedBatch.length} records loaded`);
-      }
-      
-      console.log('Total recordings loaded:', allData.length);
-      setRecordingsData(allData);
-      
-      setLoadingProgress({ 
-        current: totalBatches, 
-        total: totalBatches, 
-        message: `Hoàn thành! Đã tải ${allData.length} bản ghi` 
-      });
+      setRecordingsData(transformedData);
+      setLoadingProgress({ current: 1, total: 1, message: `Hoàn thành! Đã tải ${transformedData.length} bản ghi từ ${startDate} đến ${endDate}` });
       
     } catch (err) {
       console.error('Error fetching recordings data:', err);
@@ -244,9 +217,7 @@ const ReportRecordingsPage = () => {
     }
   };
 
-  useEffect(() => {
-    fetchRecordingsData();
-  }, []);
+  // Remove auto-fetch on mount, user will click button to fetch data
 
   // Filter and sort data
   const filteredData = recordingsData
@@ -477,8 +448,38 @@ const ReportRecordingsPage = () => {
               </div>
             </div>
 
-            {/* Search and Refresh */}
+            {/* Date Range and Search */}
             <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6">
+              {/* Date Range Selection */}
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Chọn khoảng thời gian</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Từ ngày
+                    </label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="text-black w-full px-4 py-2 text-base md:text-sm lg:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Đến ngày
+                    </label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="text-black w-full px-4 py-2 text-base md:text-sm lg:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Search and Actions */}
               <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 md:space-x-4">
                 <div className="relative">
                   <input
@@ -507,9 +508,9 @@ const ReportRecordingsPage = () => {
                     ) : (
                       <>
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        Làm mới
+                        Tải dữ liệu
                       </>
                     )}
                   </button>
