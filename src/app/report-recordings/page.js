@@ -734,7 +734,33 @@ const ReportRecordingsPage = () => {
                             
                             {/* Audio URL */}
                             <td className="px-6 py-4 text-sm text-gray-900">
-                              <CopyableIdField text={item.audio_url} fieldId={`audio-${item.id}`} maxLength={30} />
+                              <div className="space-y-2">
+                                {/* Audio Player */}
+                                <div className="flex justify-center">
+                                  <audio
+                                    controls
+                                    preload="none"
+                                    className="w-full max-w-xs min-w-[220px] h-[40px]"
+                                    onLoadStart={(e) => {
+                                      console.log('Loading audio for:', item.id);
+                                    }}
+                                  >
+                                    <source
+                                      src={item.audio_url}
+                                      type="audio/wav"
+                                    />
+                                    <source
+                                      src={item.audio_url}
+                                      type="audio/mpeg"
+                                    />
+                                    Trình duyệt của bạn không hỗ trợ thẻ audio.
+                                  </audio>
+                                </div>
+                                {/* URL for copying */}
+                                <div className="text-xs text-gray-500">
+                                  <CopyableIdField text={item.audio_url} fieldId={`audio-${item.id}`} maxLength={30} />
+                                </div>
+                              </div>
                             </td>
                             
                             {/* Audio Duration */}
