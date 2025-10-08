@@ -3,12 +3,14 @@
 -- Ensure clean recreate
 DROP FUNCTION IF EXISTS public.get_recordings_by_date(timestamptz, timestamptz, integer);
 DROP FUNCTION IF EXISTS public.get_recordings_by_date(timestamptz, timestamptz, integer, integer);
+DROP FUNCTION IF EXISTS public.get_recordings_by_date(timestamptz, timestamptz, integer, integer, integer);
 
 CREATE OR REPLACE FUNCTION public.get_recordings_by_date(
   p_start timestamptz,
   p_end timestamptz,
   p_limit integer DEFAULT 10000,
-  p_offset integer DEFAULT 0
+  p_offset integer DEFAULT 0,
+  p_age integer DEFAULT NULL
 )
 RETURNS jsonb AS $$
   WITH page AS (
@@ -39,6 +41,7 @@ RETURNS jsonb AS $$
     LEFT JOIN public.profiles pr ON pr.id = r.user_id
     WHERE r.recorded_at >= p_start
       AND r.recorded_at <= p_end
+      AND (p_age IS NULL OR r.age = p_age)
     ORDER BY r.recorded_at ASC, r.id ASC
     LIMIT p_limit OFFSET p_offset
   )
@@ -76,5 +79,5 @@ RETURNS jsonb AS $$
   FROM page;
 $$ LANGUAGE sql SECURITY DEFINER SET search_path = public;
 
-GRANT EXECUTE ON FUNCTION public.get_recordings_by_date(timestamptz, timestamptz, integer, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_recordings_by_date(timestamptz, timestamptz, integer, integer, integer) TO authenticated;
 

@@ -29,6 +29,9 @@ const ReportRecordingsPage = () => {
     const today = new Date();
     return today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
   });
+  
+  // Age filter state
+  const [ageFilter, setAgeFilter] = useState("");
 
   // Copy to clipboard function
   const copyToClipboard = async (text, fieldId) => {
@@ -150,6 +153,7 @@ const ReportRecordingsPage = () => {
           p_end: endDateTime,
           p_limit: pageSize,
           p_offset: offset,
+          p_age: ageFilter ? parseInt(ageFilter) : null,
         });
         
         if (error) throw error;
@@ -450,10 +454,10 @@ const ReportRecordingsPage = () => {
 
             {/* Date Range and Search */}
             <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6">
-              {/* Date Range Selection */}
+              {/* Date Range and Age Selection */}
               <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Chọn khoảng thời gian</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Bộ lọc</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Từ ngày
@@ -475,6 +479,40 @@ const ReportRecordingsPage = () => {
                       onChange={(e) => setEndDate(e.target.value)}
                       className="text-black w-full px-4 py-2 text-base md:text-sm lg:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2]"
                     />
+                  </div>
+                  <div className="relative">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Độ tuổi
+                    </label>
+                    <select
+                      value={ageFilter}
+                      onChange={(e) => setAgeFilter(e.target.value)}
+                      className="text-black w-full px-4 py-2 text-base md:text-sm lg:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] appearance-none bg-white"
+                    >
+                      <option value="">Tất cả</option>
+                      <option value="6">6 tuổi</option>
+                      <option value="7">7 tuổi</option>
+                      <option value="8">8 tuổi</option>
+                      <option value="9">9 tuổi</option>
+                      <option value="10">10 tuổi</option>
+                      <option value="11">11 tuổi</option>
+                      <option value="12">12 tuổi</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                      <svg
+                        className="w-4 h-4 text-[#2DA6A2]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </div>
