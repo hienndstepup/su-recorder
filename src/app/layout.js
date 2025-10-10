@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import TrackingDatadog from "./components/TrackingDatadog";
 import CheckUserOnline from "./components/CheckUserOnline";
+import MaintenanceChecker from "@/components/MaintenanceChecker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,8 +28,10 @@ export default function RootLayout({ children }) {
       >
         <AuthProvider>
           <CheckUserOnline>
-            <TrackingDatadog />
-            {children}
+            <MaintenanceChecker>
+              <TrackingDatadog />
+              {children}
+            </MaintenanceChecker>
           </CheckUserOnline>
         </AuthProvider>
       </body>

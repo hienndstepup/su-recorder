@@ -42,11 +42,19 @@ Tạo hệ thống database đơn giản với:
 - Tạo helper functions: `is_admin()`, `can_view_profile()`, `get_my_referrals()`, `get_viewable_recordings()`
 - Verification queries
 
+### 7. `07_create_settings_table_simple.sql`
+- Tạo bảng `settings` để quản lý cài đặt hệ thống
+- Tạo functions: `get_setting()`, `update_setting()`, `is_maintenance_mode()`
+- Thiết lập RLS policies (chỉ admin có thể truy cập)
+- Thêm dữ liệu mẫu bao gồm `maintenance_mode`
+- **Bật Realtime** với triggers và pg_notify
+- Tạo functions: `broadcast_setting_change()`, `get_all_settings()`, `check_maintenance_status()`
+
 ## 🚀 Cách thực hiện
 
 ### Trong Supabase Dashboard:
 1. Vào **SQL Editor**
-2. Chạy từng file theo thứ tự từ 01 đến 06
+2. Chạy từng file theo thứ tự từ 01 đến 07
 3. Kiểm tra kết quả sau mỗi file
 
 ### Commands để copy:
@@ -58,7 +66,7 @@ DROP TABLE IF EXISTS questions CASCADE;
 DROP TABLE IF EXISTS regions CASCADE;
 DROP TABLE IF EXISTS provinces CASCADE;
 
-# Sau đó import theo thứ tự 01 -> 06
+# Sau đó import theo thứ tự 01 -> 07
 ```
 
 ## ✅ Kiểm tra sau khi import
@@ -108,7 +116,7 @@ SELECT 'Regions:' as info, COUNT(*) as count FROM regions;
 
 ## ⚠️ Lưu ý quan trọng
 
-1. **Phải chạy đúng thứ tự** từ 01 đến 06
+1. **Phải chạy đúng thứ tự** từ 01 đến 07
 2. **Không skip** bất kỳ file nào
 3. **Kiểm tra lỗi** sau mỗi file trước khi chạy file tiếp theo
 4. **Backup database** trước khi chạy nếu đã có dữ liệu
@@ -123,6 +131,7 @@ SELECT 'Regions:' as info, COUNT(*) as count FROM regions;
 └── 04 (profiles) - reference provinces, sử dụng update_updated_at_column()
     └── 05 (recordings) - reference profiles, questions, provinces
         └── 06 (RLS policies) - sử dụng tất cả bảng
+            └── 07 (settings) - sử dụng is_admin() từ RLS policies
 ```
 
 ## 🎉 Kết quả mong đợi
@@ -134,3 +143,5 @@ Sau khi import xong, bạn sẽ có:
 - ✅ Auto-trigger tạo profile và update stats
 - ✅ Helper functions để query dữ liệu
 - ✅ 63 tỉnh thành và 3 miền sẵn sàng sử dụng
+- ✅ Settings table để quản lý trạng thái bảo trì
+- ✅ Realtime updates cho settings (tự động cập nhật UI)
