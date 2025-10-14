@@ -22,6 +22,20 @@ export default function ManageCTVDetailPage() {
   // Client-side incremental display
   const [visibleCount, setVisibleCount] = useState(100);
 
+  // Type filter
+  const [typeFilter, setTypeFilter] = useState('Tất cả');
+
+  // Filter recordings based on type filter
+  const filteredRecordings = recordings.filter(record => {
+    if (typeFilter === 'Tất cả') return true;
+    return record.questions?.type === typeFilter;
+  });
+
+  // Reset visible count when type filter changes
+  useEffect(() => {
+    setVisibleCount(100);
+  }, [typeFilter]);
+
   // Date range filters (default to today)
   const [startDate, setStartDate] = useState(() => {
     const today = new Date();
@@ -419,6 +433,25 @@ export default function ManageCTVDetailPage() {
                     {recordings.length} bản ghi
                   </span>
                 </div>
+
+                {/* Type filter */}
+                <div className="mt-3 md:mt-4">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                    Lọc theo loại câu hỏi:
+                  </label>
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="w-full md:w-auto px-3 py-2 text-base md:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2DA6A2] focus:border-[#2DA6A2] text-gray-900 bg-white"
+                  >
+                    <option value="Tất cả">Tất cả</option>
+                    <option value="VI_TRA_LOI">VI_TRA_LOI</option>
+                    <option value="EN_NHAI_THEO">EN_NHAI_THEO</option>
+                  </select>
+                  <div className="mt-1 text-xs text-gray-500">
+                    Hiển thị: <span className="font-semibold text-[#2DA6A2]">{filteredRecordings.length}</span> bản ghi
+                  </div>
+                </div>
               </div>
 
               <div className="overflow-x-auto">
@@ -450,6 +483,9 @@ export default function ManageCTVDetailPage() {
                         Age
                       </th>
                       <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                        Type
+                      </th>
+                      <th className="px-4 md:px-6 py-2 md:py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                         Tỉnh/thành phố
                       </th>
                     </tr>
@@ -458,7 +494,7 @@ export default function ManageCTVDetailPage() {
                     {loadingRecordings ? (
                       <tr>
                         <td
-                          colSpan="9"
+                          colSpan="10"
                           className="px-6 py-4 text-center text-gray-500"
                         >
                           <div className="flex items-center justify-center space-x-2">
@@ -467,8 +503,8 @@ export default function ManageCTVDetailPage() {
                           </div>
                         </td>
                       </tr>
-                    ) : recordings.length > 0 ? (
-                      recordings.slice(0, visibleCount).map((record, index) => (
+                    ) : filteredRecordings.length > 0 ? (
+                      filteredRecordings.slice(0, visibleCount).map((record, index) => (
                         <tr key={record.id} className="hover:bg-gray-50">
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                             {index + 1}
@@ -588,6 +624,9 @@ export default function ManageCTVDetailPage() {
                             {record.age || "-"}
                           </td>
                           <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                            {record.questions?.type || "-"}
+                          </td>
+                          <td className="px-4 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                             {record.provinces?.name}
                           </td>
                         </tr>
@@ -595,7 +634,7 @@ export default function ManageCTVDetailPage() {
                     ) : (
                       <tr>
                         <td
-                          colSpan="9"
+                          colSpan="10"
                           className="px-6 py-4 text-center text-gray-500"
                         >
                           Chưa có bài ghi âm nào
@@ -607,10 +646,10 @@ export default function ManageCTVDetailPage() {
               </div>
 
               {/* Load more button */}
-              {recordings.length > visibleCount && (
+              {filteredRecordings.length > visibleCount && (
                 <div className="px-6 py-4 border-t border-gray-200 flex justify-center">
                   <button
-                    onClick={() => setVisibleCount(prev => Math.min(prev + 100, recordings.length))}
+                    onClick={() => setVisibleCount(prev => Math.min(prev + 100, filteredRecordings.length))}
                     className="inline-flex items-center px-4 py-2 bg-[#2DA6A2] text-white rounded-lg hover:bg-[#2DA6A2]/90 transition-colors min-h-[44px]"
                   >
                     Tải thêm 100 bản ghi
